@@ -25,6 +25,9 @@ class CurrentUser(BaseModel):
     nombre: str | None = None
     apellidos: str | None = None
     email: str | None = None
+    nif: str | None = None
+    telefono: str | None = None
+    domicilio: str | None = None
 
 
 class UserCreate(BaseModel):

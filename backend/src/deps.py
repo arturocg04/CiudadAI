@@ -49,6 +49,9 @@ async def get_current_registered_user_dep(db: AsyncSession = Depends(get_db), to
         nombre=user.nombre,
         apellidos=user.apellidos,
         email=user.email,
+        nif=user.nif,
+        telefono=user.telefono,
+        domicilio=user.domicilio,
     )
 
 

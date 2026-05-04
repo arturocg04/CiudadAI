@@ -52,7 +52,7 @@
         </div>
         <div class="ticket-content">
           <p><strong>Categoría:</strong> {{ ticket.categoria | replace('_', ' ') | title }}</p>
-          <p><strong>Fecha:</strong> {{ ticket.fecha | strftime('%d/%m/%Y %H:%M') }}</p>
+          <p><strong>Fecha:</strong> {{ ticket.fecha }}</p>
           <p><strong>Descripción:</strong> {{ ticket.description }}</p>
           <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
           {% if ticket.admin_notes %}
@@ -67,15 +67,4 @@
     {% endif %}
   </div>
 </div>
-{% endblock %}
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2rem 0;
-  }
-  
-  .logout-btn:hover {
-    background: #c82333;
-    transition: background 0.3s ease;
-  }
-</style>
 {% endblock %}

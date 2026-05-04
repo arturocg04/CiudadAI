@@ -43,21 +43,6 @@ async def citizen_create_ticket(
 
 
 @citizen_router.get(
-    "/tickets",
-    status_code=status.HTTP_200_OK,
-    responses=COMMON_ERROR_RESPONSES,
-    summary="Lista de tickets del usuario",
-)
-async def citizen_list_tickets(
-    user: CurrentUser = Depends(get_current_registered_user_dep),
-    db: AsyncSession = Depends(get_db),
-) -> list[TicketSummary]:
-    """Devuelve los tickets del usuario actual."""
-
-    return await ticket_service.get_tickets_for_user(db, user.id)
-
-
-@citizen_router.get(
     "/dashboard",
     status_code=status.HTTP_200_OK,
     responses=COMMON_ERROR_RESPONSES,
@@ -118,16 +103,12 @@ async def get_ticket_status(
     "/tickets",
     status_code=status.HTTP_200_OK,
     responses=COMMON_ERROR_RESPONSES,
-    summary="Listar incidencias (Público)",
+    summary="Lista de tickets del usuario",
 )
 async def citizen_list_tickets(
-    status_filter: TicketStatus | None = Query(default=None, alias="status"),
-    skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=100),
+    user: CurrentUser = Depends(get_current_registered_user_dep),
     db: AsyncSession = Depends(get_db),
 ) -> list[TicketSummary]:
-    """
-    Lista las incidencias del sistema de forma abierta.
-    """
+    """Devuelve los tickets del usuario actual."""
 
-    return await ticket_service.list_tickets(db, status_filter, skip, limit)
+    return await ticket_service.get_tickets_for_user(db, user.id)

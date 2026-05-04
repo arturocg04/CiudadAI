@@ -41,6 +41,10 @@ class Settings(BaseSettings):
         default=None,
         alias="SECRET_KEY",
     )
+    jwt_secret_key: str | None = Field(
+        default=None,
+        alias="JWT_SECRET_KEY",
+    )
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
 
     # --- Credenciales hardcoded (mock de usuarios) ---
@@ -90,6 +94,9 @@ if settings.secret_key is None:
         raise ValueError(
             "SECRET_KEY must be set in environment for non-dev environments"
         )
+
+if settings.jwt_secret_key is None:
+    settings.jwt_secret_key = settings.secret_key
 
 if settings.mock_auth_username and settings.mock_auth_password:
     # sensible to log that demo credentials are active (no password value printed)

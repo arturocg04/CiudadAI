@@ -149,6 +149,12 @@ a.button,
   background: #001646;
 }
 
+.login-hint {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .phone-row {
   display: grid;
   gap: 10px;

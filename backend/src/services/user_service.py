@@ -8,6 +8,8 @@ from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -18,20 +20,25 @@ logger = logging.getLogger(__name__)
 
 
 async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
-    """Registra un nuevo usuario verificando unicidad de email y teléfono."""
+    """Registra un nuevo usuario verificando unicidad de email, teléfono y NIF."""
     # Verificar si email ya existe
     existing_email = await db.execute(
-        db.query(UserORM).filter(UserORM.email == user_data.email)
+        select(UserORM).where(UserORM.email == user_data.email)
     )
-    if existing_email.scalar():
+    if existing_email.scalar_one_or_none() is not None:
         raise ValueError("El email ya está registrado.")
 
     # Verificar si teléfono ya existe
     existing_phone = await db.execute(
-        db.query(UserORM).filter(UserORM.telefono == user_data.telefono)
+        select(UserORM).where(UserORM.telefono == user_data.telefono)
     )
-    if existing_phone.scalar():
+    if existing_phone.scalar_one_or_none() is not None:
         raise ValueError("El teléfono ya está registrado.")
+
+    # Verificar si NIF ya existe
+    existing_nif = await db.execute(select(UserORM).where(UserORM.nif == user_data.nif))
+    if existing_nif.scalar_one_or_none() is not None:
+        raise ValueError("El NIF ya está registrado.")
 
     # Hash de la contraseña
     hashed_password = bcrypt.hashpw(user_data.password.encode(), bcrypt.gensalt()).decode()
@@ -48,17 +55,26 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
         role="citizen",
     )
     db.add(new_user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        error_text = str(exc.orig).lower() if exc.orig else str(exc).lower()
+        if "users_nif_key" in error_text:
+            raise ValueError("El NIF ya está registrado.") from exc
+        if "users_email_key" in error_text:
+            raise ValueError("El email ya está registrado.") from exc
+        if "users_telefono_key" in error_text:
+            raise ValueError("El teléfono ya está registrado.") from exc
+        raise
     await db.refresh(new_user)
     return new_user
 
 
 async def authenticate_user(db: AsyncSession, login_data: UserLogin) -> UserORM | None:
     """Autentica un usuario por email y contraseña."""
-    user = await db.execute(
-        db.query(UserORM).filter(UserORM.email == login_data.email)
-    )
-    user = user.scalar()
+    user_result = await db.execute(select(UserORM).where(UserORM.email == login_data.email))
+    user = user_result.scalar_one_or_none()
     if user and bcrypt.checkpw(login_data.password.encode(), user.password_hash.encode()):
         return user
     return None
@@ -83,8 +99,8 @@ async def get_current_user_from_token(db: AsyncSession, token: str) -> CurrentUs
         email: str = payload.get("sub")
         if email is None:
             return None
-        user = await db.execute(db.query(UserORM).filter(UserORM.email == email))
-        user = user.scalar()
+        user_result = await db.execute(select(UserORM).where(UserORM.email == email))
+        user = user_result.scalar_one_or_none()
         if user:
             return CurrentUser(
                 id=user.id,
