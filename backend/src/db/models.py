@@ -1,9 +1,3 @@
-"""Modelos ORM de SQLAlchemy para la base de datos.
-
-Propósito: mapear la tabla `tickets` a una clase Python para que
-SQLAlchemy pueda ejecutar queries tipadas sin SQL crudo.
-"""
-
 from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Integer, String, Text
@@ -12,6 +6,26 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     """Clase base de la que heredan todos los modelos ORM."""
+
+
+class UserORM(Base):
+    """Tabla de usuarios registrados."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(120))
+    apellidos: Mapped[str] = mapped_column(String(180))
+    nif: Mapped[str] = mapped_column(String(32), unique=True)
+    telefono: Mapped[str] = mapped_column(String(24), unique=True)
+    email: Mapped[str] = mapped_column(String(254), unique=True)
+    domicilio: Mapped[str] = mapped_column(String(255))
+    password_hash: Mapped[str] = mapped_column(String(128))
+    role: Mapped[str] = mapped_column(String(20), default="citizen")  # "citizen" or "admin"
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
 
 
 class TicketORM(Base):
@@ -24,6 +38,9 @@ class TicketORM(Base):
     __tablename__ = "tickets"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    # --- Referencia al usuario ---
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # --- Datos anonimizados del ciudadano ---
     nombre: Mapped[str] = mapped_column(String(120))

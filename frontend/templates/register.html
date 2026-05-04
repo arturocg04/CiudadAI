@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="register-container">
+  <div class="register-header">
+    <h1>Crear cuenta</h1>
+    <p>Regístrate para reportar incidencias y seguir su progreso.</p>
+  </div>
+
+  <div class="register-panel card">
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/auth/register" class="stack">
+      <label>
+        Nombre
+        <input type="text" name="nombre" required maxlength="120" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+" />
+      </label>
+      <label>
+        Apellidos
+        <input type="text" name="apellidos" required maxlength="180" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+" />
+      </label>
+      <label>
+        NIF/NIE
+        <input type="text" name="nif" required minlength="9" maxlength="32" />
+      </label>
+      <label>
+        Teléfono
+        <input type="tel" name="telefono" required maxlength="24" />
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" required />
+      </label>
+      <label>
+        Domicilio
+        <input type="text" name="domicilio" required maxlength="255" />
+      </label>
+      <label>
+        Contraseña
+        <input type="password" name="password" required minlength="8" />
+      </label>
+      <button type="submit" class="button primary">Crear cuenta</button>
+    </form>
+    <a href="/" class="button back">Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}

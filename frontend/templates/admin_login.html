@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+  <div class="login-header">
+    <h1>Acceso Administrador</h1>
+    <p>Panel de administración de CiudadIA</p>
+  </div>
+
+  <div class="login-panel card">
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/auth/admin/login" class="stack">
+      <label>
+        Usuario
+        <input type="text" name="username" required />
+      </label>
+      <label>
+        Contraseña
+        <input type="password" name="password" required />
+      </label>
+      <button type="submit" class="button primary">Acceder</button>
+    </form>
+    <p class="muted" style="text-align:center; margin-top:1rem;">Usuario demo: <strong>api_user</strong> / Contraseña: <strong>change_me</strong></p>
+    <a href="/" class="button back">Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}

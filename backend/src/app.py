@@ -20,6 +20,7 @@ from src.routers.citizen_router import citizen_router
 from src.routers.health_router import health_router
 from src.routers.items_router import items_router
 from src.routers.tickets_router import tickets_router
+from src.routers.user_router import router as user_router
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 # Registro de routers bajo un prefijo de versión para mantener compatibilidad futura.
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)
+app.include_router(user_router, prefix=f"{settings.api_prefix}/user")
 app.include_router(admin_router, prefix=settings.api_prefix)
 app.include_router(citizen_router, prefix=settings.api_prefix)
 app.include_router(items_router, prefix=settings.api_prefix)

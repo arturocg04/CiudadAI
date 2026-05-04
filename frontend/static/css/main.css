@@ -109,13 +109,15 @@ button.secondary {
 }
 
 .button.back {
-  background: #0f66d6;
+  background: #0a4ab8;
   color: #ffffff;
   border-radius: 999px;
-  padding: 12px 22px;
-  min-width: 180px;
+  padding: 10px 24px;
+  min-width: auto;
+  width: fit-content;
+  margin: 1.5rem auto 0;
   justify-content: center;
-  box-shadow: 0 12px 24px rgba(15, 102, 214, 0.18);
+  box-shadow: 0 12px 24px rgba(10, 74, 184, 0.2);
 }
 
 .button.back:hover {
@@ -363,4 +365,116 @@ a.button,
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #f9fbff;
+}
+
+/* Login styles */
+.login-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.register-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.register-panel {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.admin-access {
+  text-align: center;
+}
+
+/* Citizen dashboard */
+.citizen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.citizen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.form-panel {
+  padding: 2rem;
+}
+
+.tickets-panel {
+  padding: 2rem;
+}
+
+.tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ticket-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.ticket-status.pending {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.ticket-status.resolved {
+  background: #d4edda;
+  color: #155724;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.button.logout {
+  background: var(--danger);
+  color: white;
+}
+
+/* Buttons */
+.button.back {
+  background: #6c757d;
+  color: white;
+}
+
+.button.admin-button {
+  background: linear-gradient(135deg, #001f5b 0%, #003d99 100%);
+  color: white;
 }

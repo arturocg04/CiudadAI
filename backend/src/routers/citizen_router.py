@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.common.responses import COMMON_ERROR_RESPONSES
 from src.constants import API_TAGS
 from src.db.session import get_db
+from src.deps import get_current_registered_user_dep
+from src.models.auth import CurrentUser
 from src.models.tickets import (
     TicketAnonymizedRecord,
-    TicketCreateInput,
+    TicketCreateInputForUser,
     TicketStatus,
     TicketSummary,
 )
@@ -28,15 +30,31 @@ citizen_router = APIRouter(prefix="/citizen", tags=[API_TAGS["citizen"]])
     summary="Crear nueva incidencia",
 )
 async def citizen_create_ticket(
-    body: TicketCreateInput,
+    body: TicketCreateInputForUser,
+    user: CurrentUser = Depends(get_current_registered_user_dep),
     db: AsyncSession = Depends(get_db),
 ) -> TicketAnonymizedRecord:
     """
-    El ciudadano reporta una nueva incidencia de forma pública.
+    El ciudadano reporta una nueva incidencia.
     Los datos se anonimizan y la IA predice la urgencia automáticamente.
     """
 
-    return await ticket_service.create_ticket(db, body)
+    return await ticket_service.create_ticket_for_user(db, body, user)
+
+
+@citizen_router.get(
+    "/tickets",
+    status_code=status.HTTP_200_OK,
+    responses=COMMON_ERROR_RESPONSES,
+    summary="Lista de tickets del usuario",
+)
+async def citizen_list_tickets(
+    user: CurrentUser = Depends(get_current_registered_user_dep),
+    db: AsyncSession = Depends(get_db),
+) -> list[TicketSummary]:
+    """Devuelve los tickets del usuario actual."""
+
+    return await ticket_service.get_tickets_for_user(db, user.id)
 
 
 @citizen_router.get(

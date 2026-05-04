@@ -5,9 +5,11 @@ Ejemplo de uso: sirve como puente didáctico antes de pasar a JWT reales u OIDC.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.common.responses import COMMON_ERROR_RESPONSES
 from src.constants import API_TAGS
+from src.db.session import get_db
 from src.deps import get_current_user
 from src.models.auth import CurrentUser, LoginInput, TokenResponse
 from src.services.auth_service import authenticate_demo_user
@@ -33,6 +35,23 @@ async def login(payload: LoginInput) -> TokenResponse:
             detail="Credenciales inválidas.",
         )
     return TokenResponse(**token_data)
+
+
+@auth_router.post(
+    "/admin/login",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def admin_login(payload: LoginInput) -> TokenResponse:
+    """Login para administradores."""
+
+    user = authenticate_demo_user(payload.username, payload.password)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas.",
+        )
+    return TokenResponse(**user)
 
 
 @auth_router.get(

@@ -18,11 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.ml_client import call_ml_predict
 from src.db.models import TicketORM
+from src.models.auth import CurrentUser
 from src.models.tickets import (
     TicketAdminDecision,
     TicketAnonymizedRecord,
     TicketCategory,
     TicketCreateInput,
+    TicketCreateInputForUser,
     TicketDashboardStats,
     TicketStatus,
     TicketSummary,
@@ -288,3 +290,46 @@ async def get_dashboard_stats(db: AsyncSession) -> TicketDashboardStats:
         by_urgency=by_urgency,
         by_category=by_category,
     )
+
+
+async def create_ticket_for_user(
+    db: AsyncSession,
+    ticket_input: TicketCreateInputForUser,
+    user,
+) -> TicketAnonymizedRecord:
+    """Crea un nuevo ticket para un usuario registrado."""
+
+    # Usar datos del usuario
+    from src.models.tickets import TicketCreateInput
+    full_input = TicketCreateInput(
+        nombre=user.nombre,
+        apellidos=user.apellidos,
+        nif="",  # No almacenar NIF real por privacidad
+        telefono="",  # No almacenar teléfono real
+        email=user.email,
+        categoria=ticket_input.categoria,
+        description=ticket_input.description,
+        direccion_persona="",  # Usar domicilio del usuario si fuera necesario
+        ubicacion_incidencia=ticket_input.ubicacion_incidencia,
+    )
+
+    # Crear ticket normal pero con user_id
+    record = await create_ticket(db, full_input)
+    # Actualizar user_id en el ORM
+    await db.execute(
+        update(TicketORM).where(TicketORM.id == record.id).values(user_id=user.id)
+    )
+    await db.commit()
+    return record
+
+
+async def get_tickets_for_user(
+    db: AsyncSession,
+    user_id: int,
+) -> list[TicketSummary]:
+    """Obtiene los tickets de un usuario."""
+
+    query = select(TicketORM).where(TicketORM.user_id == user_id)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [_orm_to_summary(row) for row in rows]

@@ -1,53 +1,73 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="citizen-container">
-  <div class="citizen-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 2rem; border-radius: 8px; margin-bottom: 2rem;">
-    <h1 style="margin: 0; font-size: 2.5rem;">🏙️ PANEL CIUDADANO</h1>
-    <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">{{ citizen_data.message }}</p>
-  </div>
-
-  <div class="citizen-info" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid #11998e;">
-    <h2 style="margin-top: 0;">Mi Información</h2>
-    <p><strong>Usuario:</strong> {{ current_user.username }}</p>
-    <p><strong>Rol:</strong> <span style="background: #11998e; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: bold;">{{ current_user.role | upper }}</span></p>
-  </div>
-
-  <div class="citizen-content" style="background: white; padding: 2rem; border-radius: 8px; border: 1px solid #ddd;">
-    <h2>{{ citizen_data.content.title }}</h2>
-    <p>{{ citizen_data.content.description }}</p>
-    
-    <div style="margin-top: 2rem; padding: 1.5rem; background: #d4edda; border-radius: 4px; border-left: 4px solid #28a745;">
-      <p style="margin: 0;">
-        <strong>✅ ¡Bienvenido!</strong> Como ciudadano, puedes reportar incidencias en tu ciudad. 
-        Tu participación nos ayuda a mantener una ciudad mejor para todos.
-      </p>
-    </div>
-
-    <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-      <div style="background: #f0f7ff; padding: 1.5rem; border-radius: 4px; border-left: 4px solid #2196F3;">
-        <h3 style="margin-top: 0;">📝 Crear Reporte</h3>
-        <p>Reporta incidencias como baches, alumbrado roto, basura acumulada, etc.</p>
-      </div>
-      
-      <div style="background: #fff3e0; padding: 1.5rem; border-radius: 4px; border-left: 4px solid #FF9800;">
-        <h3 style="margin-top: 0;">📊 Ver Mis Reportes</h3>
-        <p>Consulta el estado de tus reportes anteriores y el progreso de las reparaciones.</p>
-      </div>
-    </div>
-  </div>
-
-  <div style="text-align: center; margin-top: 2rem;">
-    <form method="post" action="/logout" style="display: inline;">
-      <button type="submit" class="logout-btn" style="background: #dc3545; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">
-        Cerrar Sesión
-      </button>
-    </form>
-  </div>
+<div class="citizen-header">
+  <h1>Reporta una incidencia</h1>
+  <button class="button logout" onclick="document.getElementById('logout-form').submit()">Cerrar sesión</button>
+  <form id="logout-form" method="post" action="/logout" style="display: none;"></form>
 </div>
 
-<style>
-  .citizen-container {
+<div class="citizen-grid">
+  <div class="form-panel card">
+    <h2>Nuevo reporte</h2>
+    {% if form_error %}
+    <div class="error">{{ form_error }}</div>
+    {% endif %}
+    <form method="post" action="/citizen/report" class="stack">
+      <label>
+        Categoría
+        <select name="categoria" required>
+          <option value="">Seleccionar...</option>
+          <option value="movilidad">Movilidad</option>
+          <option value="limpieza">Limpieza</option>
+          <option value="alumbrado_publico">Alumbrado público</option>
+          <option value="parques_y_jardines">Parques y jardines</option>
+          <option value="mobiliario_urbano">Mobiliario urbano</option>
+          <option value="otros">Otros</option>
+        </select>
+      </label>
+      <label>
+        Descripción
+        <textarea name="description" required maxlength="300" rows="4"></textarea>
+      </label>
+      <label>
+        Ubicación de la incidencia
+        <input type="text" name="ubicacion_incidencia" required maxlength="255" />
+      </label>
+      <button type="submit" class="button primary">Enviar reporte</button>
+    </form>
+  </div>
+
+  <div class="tickets-panel card">
+    <h2>Mis reportes</h2>
+    {% if citizen_tickets %}
+    <div class="tickets-list">
+      {% for ticket in citizen_tickets %}
+      <div class="ticket-item">
+        <div class="ticket-header">
+          <span class="ticket-id">#{{ ticket.id }}</span>
+          <span class="ticket-status {{ 'pending' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'resolved' }}">
+            {{ 'Pendiente' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'Resuelto' }}
+          </span>
+        </div>
+        <div class="ticket-content">
+          <p><strong>Categoría:</strong> {{ ticket.categoria | replace('_', ' ') | title }}</p>
+          <p><strong>Fecha:</strong> {{ ticket.fecha | strftime('%d/%m/%Y %H:%M') }}</p>
+          <p><strong>Descripción:</strong> {{ ticket.description }}</p>
+          <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
+          {% if ticket.admin_notes %}
+          <p><strong>Respuesta admin:</strong> {{ ticket.admin_notes }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p>No tienes reportes aún.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
     max-width: 900px;
     margin: 0 auto;
     padding: 2rem 0;

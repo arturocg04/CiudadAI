@@ -1,10 +1,4 @@
-"""Modelos relacionados con autenticación.
-
-Propósito: definir cómo viajan las credenciales y el usuario autenticado por la API.
-Ejemplo de uso: `TokenResponse` representa la respuesta del login mock.
-"""
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginInput(BaseModel):
@@ -25,5 +19,28 @@ class TokenResponse(BaseModel):
 class CurrentUser(BaseModel):
     """Usuario autenticado disponible dentro de endpoints protegidos."""
 
+    id: int | None = None
     username: str
     role: str = "citizen"  # "citizen" o "admin"
+    nombre: str | None = None
+    apellidos: str | None = None
+    email: str | None = None
+
+
+class UserCreate(BaseModel):
+    """Datos para crear un nuevo usuario."""
+
+    nombre: str = Field(..., min_length=1, max_length=120)
+    apellidos: str = Field(..., min_length=1, max_length=180)
+    nif: str = Field(..., min_length=1, max_length=32)
+    telefono: str = Field(..., min_length=1, max_length=24)
+    email: EmailStr
+    domicilio: str = Field(..., min_length=1, max_length=255)
+    password: str = Field(..., min_length=8)
+
+
+class UserLogin(BaseModel):
+    """Credenciales para login de usuario registrado."""
+
+    email: EmailStr
+    password: str

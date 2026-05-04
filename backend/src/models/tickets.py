@@ -98,14 +98,14 @@ class TicketCreateInput(BaseModel):
         normalized = value.strip().upper()
         if not re.fullmatch(r"(?:\d{8}[A-Z]|[XYZ]\d{7}[A-Z])", normalized):
             raise ValueError("NIF/NIE debe tener formato válido.")
-        return normalized
 
-    @validator("telefono")
-    def validate_telefono(cls, value: str) -> str:
-        normalized = re.sub(r"[\s\-]+", " ", value.strip())
-        if not re.fullmatch(r"\+\d{1,3} \d{6,15}", normalized):
-            raise ValueError("Teléfono debe incluir prefijo +CC y un número válido.")
-        return normalized
+
+class TicketCreateInputForUser(BaseModel):
+    """Payload simplificado para usuarios registrados."""
+
+    categoria: TicketCategory
+    description: str = Field(min_length=1, max_length=300)
+    ubicacion_incidencia: str = Field(min_length=1, max_length=255)
 
 
 class TicketAnonymizedRecord(BaseModel):

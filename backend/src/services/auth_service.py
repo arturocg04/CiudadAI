@@ -10,8 +10,10 @@ from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
+from src.db.models import UserORM
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +32,18 @@ def _build_users_db_from_settings() -> None:
     from src.config import settings
 
     if not settings.mock_auth_username or not settings.mock_auth_password:
-        logging.getLogger(__name__).debug("No demo mock auth configured via settings.")
-        return
-
-    username = settings.mock_auth_username
-    pwd = settings.mock_auth_password
+        if settings.app_env == "dev":
+            logging.getLogger(__name__).warning(
+                "No se han configurado credenciales de mock para admin. Usando credenciales de desarrollo por defecto."
+            )
+            username = "api_user"
+            pwd = "change_me"
+        else:
+            logging.getLogger(__name__).debug("No demo mock auth configured via settings.")
+            return
+    else:
+        username = settings.mock_auth_username
+        pwd = settings.mock_auth_password
     if pwd.startswith("$2b$"):
         hashed = pwd
     else:
@@ -48,6 +57,78 @@ def _build_users_db_from_settings() -> None:
         "hashed_password": hashed,
         "role": "admin",
     }
+
+
+async def authenticate_demo_user(db: AsyncSession, username: str, password: str) -> dict | None:
+    """Autentica usuarios demo (admin y citizen)."""
+    if username in USERS_DB:
+        user_info = USERS_DB[username]
+        if bcrypt.checkpw(password.encode(), user_info["hashed_password"].encode()):
+            return {
+                "username": user_info["username"],
+                "role": user_info["role"],
+            }
+    return None
+
+
+async def authenticate_registered_user(db: AsyncSession, email: str, password: str) -> UserORM | None:
+    """Autentica usuarios registrados por email."""
+    user = await db.execute(db.query(UserORM).filter(UserORM.email == email))
+    user = user.scalar()
+    if user and bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        return user
+    return None
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Crea un JWT access token."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(UTC) + expires_delta
+    else:
+        expire = datetime.now(UTC) + timedelta(minutes=30)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return encoded_jwt
+
+
+async def get_current_user(db: AsyncSession, token: str) -> dict | None:
+    """Obtiene el usuario actual desde el token (para demo)."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        if username in USERS_DB:
+            return {
+                "username": username,
+                "role": USERS_DB[username]["role"],
+            }
+    except JWTError:
+        return None
+    return None
+
+
+async def get_current_registered_user(db: AsyncSession, token: str) -> UserORM | None:
+    """Obtiene el usuario registrado actual desde el token."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        user = await db.execute(db.query(UserORM).filter(UserORM.email == email))
+        return user.scalar()
+    except JWTError:
+        return None
+
+
+def decode_access_token(token: str) -> dict | None:
+    """Decodifica un JWT access token."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        return payload
+    except JWTError:
+        return None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

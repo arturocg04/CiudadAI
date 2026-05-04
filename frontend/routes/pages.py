@@ -26,7 +26,7 @@ def _format_datetime(value: str | datetime | None) -> str | None:
 
 
 @router.get("/")
-async def home(request: Request, ticket_id: int | None = None):
+async def home(request: Request):
     if request.session.get("access_token"):
         # Redirigir según rol
         role = request.session.get("role")
@@ -35,25 +35,90 @@ async def home(request: Request, ticket_id: int | None = None):
         else:
             return RedirectResponse(url="/citizen/dashboard", status_code=303)
 
-    search_result = None
-    search_error = None
+    return templates.TemplateResponse("home.html", {"request": request})
 
-    if ticket_id is not None:
+
+def _translate_api_error(exc: Exception, fallback: str) -> str:
+    if isinstance(exc, RequestError):
+        return "No se pudo conectar con el backend. Comprueba que el servicio de la API esté en ejecución."
+
+    error_msg = fallback
+    if hasattr(exc, "response") and exc.response is not None:
         try:
-            import httpx
-            async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
-                response = await client.get(f"/api/v1/citizen/tickets/{ticket_id}/status")
-                response.raise_for_status()
-                search_result = response.json()
-                if search_result and search_result.get("fecha_creacion"):
-                    search_result["fecha_creacion"] = _format_datetime(search_result["fecha_creacion"])
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code == 404:
-                search_error = "No se ha encontrado ninguna incidencia con ese ID."
-            else:
-                search_error = "Error al consultar la incidencia."
-        except RequestError:
-            search_error = "No se pudo conectar con el backend."
+            error_data = exc.response.json()
+            if isinstance(error_data, dict):
+                detail = error_data.get("detail") or error_data.get("message")
+                if detail:
+                    return str(detail)
+        except ValueError:
+            pass
+    return error_msg
+
+
+@router.get("/register")
+async def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
+@router.get("/auth/register")
+async def auth_register_redirect(request: Request):
+    return RedirectResponse(url="/register", status_code=303)
+
+
+@router.get("/admin/login")
+async def admin_login_page(request: Request):
+    return templates.TemplateResponse("admin_login.html", {"request": request})
+
+
+@router.get("/auth/login")
+async def auth_login_redirect(request: Request):
+    return RedirectResponse(url="/", status_code=303)
+
+
+@router.post("/auth/login")
+async def login(request: Request, email: str = Form(...), password: str = Form(...)):
+    try:
+        token_response = await api_client.login_user(email, password)
+        request.session["access_token"] = token_response.access_token
+        request.session["role"] = "citizen"  # Asumir citizen por ahora
+        return RedirectResponse(url="/citizen/dashboard", status_code=303)
+    except (HTTPStatusError, RequestError) as exc:
+        error_msg = _translate_api_error(exc, "Credenciales inválidas")
+        if error_msg == "No se encontró el servicio de backend. Comprueba que el backend esté en ejecución.":
+            return templates.TemplateResponse("home.html", {"request": request, "error": error_msg})
+        return templates.TemplateResponse("home.html", {"request": request, "error": error_msg})
+
+
+@router.post("/auth/register")
+async def register(request: Request, nombre: str = Form(...), apellidos: str = Form(...), nif: str = Form(...), telefono: str = Form(...), email: str = Form(...), domicilio: str = Form(...), password: str = Form(...)):
+    try:
+        await api_client.register_user(nombre, apellidos, nif, telefono, email, domicilio, password)
+        # Auto-login después de registro
+        token_response = await api_client.login_user(email, password)
+        request.session["access_token"] = token_response.access_token
+        request.session["role"] = "citizen"
+        return RedirectResponse(url="/citizen/dashboard", status_code=303)
+    except (HTTPStatusError, RequestError) as exc:
+        error_msg = _translate_api_error(exc, "Error al crear cuenta")
+        return templates.TemplateResponse("register.html", {"request": request, "error": error_msg})
+
+
+@router.post("/auth/admin/login")
+async def admin_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    try:
+        token_response = await api_client.admin_login(username, password)
+        request.session["access_token"] = token_response.access_token
+        request.session["role"] = "admin"
+        return RedirectResponse(url="/admin/dashboard", status_code=303)
+    except (HTTPStatusError, RequestError) as exc:
+        error_msg = _translate_api_error(exc, "Credenciales inválidas")
+        return templates.TemplateResponse("admin_login.html", {"request": request, "error": error_msg})
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=303)
 
     return templates.TemplateResponse(
         "home.html",
@@ -96,7 +161,7 @@ async def admin_dashboard(request: Request):
     role = request.session.get("role")
     
     if not token or role != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
     
     try:
         current_user = await api_client.me(token)
@@ -130,7 +195,7 @@ async def admin_dashboard(request: Request):
                     ticket["fecha"] = _format_datetime(ticket["fecha"])
     except (HTTPStatusError, RequestError):
         request.session.clear()
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
     
     context = {
         "request": request,
@@ -147,7 +212,7 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
     token = request.session.get("access_token")
     role = request.session.get("role")
     if not token or role != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
 
     try:
         import httpx
@@ -167,7 +232,7 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
             statuses = spec.get("statuses") or []
     except (HTTPStatusError, RequestError):
         request.session.clear()
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
 
     return templates.TemplateResponse(
         "admin_ticket_edit.html",
@@ -190,7 +255,7 @@ async def admin_ticket_review_submit(
     token = request.session.get("access_token")
     role = request.session.get("role")
     if not token or role != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
 
     try:
         import httpx
@@ -253,34 +318,22 @@ async def citizen_report_form(request: Request):
 @router.post("/citizen/report")
 async def citizen_report_submit(
     request: Request,
-    nombre: str = Form(...),
-    apellidos: str = Form(...),
-    nif: str = Form(...),
-    telefono: str = Form(""),
-    phone_prefix: str = Form("+34"),
-    phone_local: str = Form(""),
-    email: str = Form(...),
     categoria: str = Form(...),
     description: str = Form(...),
-    direccion_persona: str = Form(...),
     ubicacion_incidencia: str = Form(...),
 ):
-    if phone_prefix and phone_local:
-        telefono = f"{phone_prefix.strip()} {phone_local.strip()}"
+    token = request.session.get("access_token")
+    if not token:
+        return RedirectResponse(url="/", status_code=303)
 
     payload = {
-        "nombre": nombre,
-        "apellidos": apellidos,
-        "nif": nif,
-        "telefono": telefono,
-        "email": email,
         "categoria": categoria,
         "description": description,
-        "direccion_persona": direccion_persona,
         "ubicacion_incidencia": ubicacion_incidencia,
     }
     try:
-        ticket = await api_client.create_ticket(payload)
+        ticket = await api_client.create_ticket_authenticated(token, payload)
+        return RedirectResponse(url="/citizen/dashboard", status_code=303)
     except HTTPStatusError as exc:
         error_detail = "No se pudo enviar el reporte. Inténtalo de nuevo más tarde."
         try:
@@ -291,16 +344,18 @@ async def citizen_report_submit(
                     error_detail = f"No se pudo enviar el reporte: {detail}"
         except ValueError:
             pass
+        # Recargar tickets para mostrar error
+        citizen_tickets = []
+        try:
+            citizen_tickets = await api_client.get_user_tickets(token)
+            for ticket in citizen_tickets:
+                if ticket.get("fecha"):
+                    ticket["fecha"] = _format_datetime(ticket["fecha"])
+        except:
+            pass
         return templates.TemplateResponse(
-            "home.html",
-            {
-                "request": request,
-                "ticket_id": None,
-                "search_result": None,
-                "search_error": None,
-                "form_error": error_detail,
-            },
-            status_code=exc.response.status_code if exc.response is not None else 503,
+            "citizen_dashboard.html",
+            {"request": request, "citizen_tickets": citizen_tickets, "form_error": error_detail},
         )
     except RequestError:
         return templates.TemplateResponse(
@@ -326,30 +381,25 @@ async def citizen_report_submit(
 @router.get("/citizen/dashboard")
 async def citizen_dashboard(request: Request):
     token = request.session.get("access_token")
-    current_user = None
-    if token:
-        try:
-            current_user = await api_client.me(token)
-        except (HTTPStatusError, RequestError):
-            request.session.clear()
-            current_user = None
+    if not token:
+        return RedirectResponse(url="/", status_code=303)
 
+    current_user = None
+    citizen_tickets = []
     try:
-        import httpx
-        async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
-            response = await client.get("/api/v1/citizen/dashboard")
-            response.raise_for_status()
-            citizen_data = response.json()
+        current_user = await api_client.me(token)
+        citizen_tickets = await api_client.get_user_tickets(token)
+        # Formatear fechas
+        for ticket in citizen_tickets:
+            if ticket.get("fecha"):
+                ticket["fecha"] = _format_datetime(ticket["fecha"])
     except (HTTPStatusError, RequestError):
-        return templates.TemplateResponse(
-            "citizen_dashboard.html",
-            {"request": request, "current_user": current_user, "citizen_data": None, "error": "No se pudo cargar la información del ciudadano."},
-            status_code=503,
-        )
+        request.session.clear()
+        return RedirectResponse(url="/", status_code=303)
 
     context = {
         "request": request,
         "current_user": current_user,
-        "citizen_data": citizen_data,
+        "citizen_tickets": citizen_tickets,
     }
     return templates.TemplateResponse("citizen_dashboard.html", context)
