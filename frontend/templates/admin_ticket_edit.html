@@ -38,7 +38,9 @@
           Cambiar estado
           <select name="status" required>
             {% for s in statuses %}
-              <option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>
+              <option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>
+                {% if s == 'pending_review' %}Pendiente{% elif s == 'resolved' %}Cerrado{% else %}{{ s }}{% endif %}
+              </option>
             {% endfor %}
           </select>
         </label>

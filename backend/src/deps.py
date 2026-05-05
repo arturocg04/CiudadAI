@@ -15,7 +15,6 @@ from src.models.errors import AuthenticationError
 from src.services.auth_service import (
     decode_access_token,
     get_current_registered_user,
-    get_current_user as get_demo_user,
 )
 
 # tokenUrl se publica en OpenAPI y debe coincidir con el endpoint de login.
@@ -49,9 +48,6 @@ async def get_current_registered_user_dep(db: AsyncSession = Depends(get_db), to
         nombre=user.nombre,
         apellidos=user.apellidos,
         email=user.email,
-        nif=user.nif,
-        telefono=user.telefono,
-        domicilio=user.domicilio,
     )
 
 

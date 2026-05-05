@@ -55,7 +55,7 @@ def _orm_to_record(row: TicketORM) -> TicketAnonymizedRecord:
         ubicacion_incidencia=row.ubicacion_incidencia,
         # Mapeo a los nuevos atributos
         prediccion_urgencia=TicketUrgency(row.prediccion_urgencia)
-        if row.prediccion_urgencia is not None
+        if row.prediccion_urgencia
         else None,
         prediccion_categoria=TicketCategory(row.prediccion_categoria)
         if row.prediccion_categoria
@@ -77,7 +77,7 @@ def _orm_to_summary(row: TicketORM) -> TicketSummary:
         ubicacion_incidencia=row.ubicacion_incidencia,
         description=row.description,
         prediccion_urgencia=TicketUrgency(row.prediccion_urgencia)
-        if row.prediccion_urgencia is not None
+        if row.prediccion_urgencia
         else None,
         prediccion_categoria=TicketCategory(row.prediccion_categoria)
         if row.prediccion_categoria
@@ -93,7 +93,6 @@ def _orm_to_summary(row: TicketORM) -> TicketSummary:
 async def create_ticket(
     db: AsyncSession,
     ticket_input: TicketCreateInput,
-    user_id: int | None = None,
 ) -> TicketAnonymizedRecord:
     """Crea un nuevo ticket siguiendo el flujo completo.
 
@@ -133,7 +132,6 @@ async def create_ticket(
 
     # Paso 4: persistir en BD
     ticket_orm = TicketORM(
-        user_id=user_id,
         nombre=anon_data["nombre"],
         apellidos=anon_data["apellidos"],
         nif=anon_data["nif"],
@@ -252,6 +250,12 @@ async def get_dashboard_stats(db: AsyncSession) -> TicketDashboardStats:
     )
     resolved = resolved_result.scalar_one()
 
+    # Nuevos tickets que todavía no han sido abiertos para revisión.
+    new_result = await db.execute(
+        select(func.count()).where(TicketORM.status == str(TicketStatus.pending_classification))
+    )
+    new_tickets = new_result.scalar_one()
+
     # Abiertos (todos los que no están resueltos)
     open_count = total - resolved
 
@@ -285,6 +289,7 @@ async def get_dashboard_stats(db: AsyncSession) -> TicketDashboardStats:
 
     return TicketDashboardStats(
         total=total,
+        new_tickets=new_tickets,
         pending_review=pending_review,
         open=open_count,
         resolved=resolved,
@@ -301,42 +306,40 @@ async def create_ticket_for_user(
 ) -> TicketAnonymizedRecord:
     """Crea un nuevo ticket para un usuario registrado."""
 
-    # Usar datos del usuario
+    # Usar datos del usuario.
+    # Para preservar privacidad y no requerir datos sensibles del usuario,
+    # rellenamos campos opcionales con valores válidos si no están disponibles.
     from src.models.tickets import TicketCreateInput
-    nombre = user.nombre
-    apellidos = user.apellidos
-    nif = getattr(user, "nif", None)
-    telefono = getattr(user, "telefono", None)
-    email = user.email
-    domicilio = getattr(user, "domicilio", None)
 
-    if user.id and (not nif or not telefono or not domicilio or not nombre or not apellidos or not email):
-        from src.db.models import UserORM
+    def _safe_nif(value: str | None) -> str:
+        return value if value and len(value.strip()) >= 9 else "00000000A"
 
-        result = await db.execute(select(UserORM).where(UserORM.id == user.id))
-        user_row = result.scalar_one_or_none()
-        if user_row is not None:
-            nombre = nombre or user_row.nombre
-            apellidos = apellidos or user_row.apellidos
-            nif = nif or user_row.nif
-            telefono = telefono or user_row.telefono
-            email = email or user_row.email
-            domicilio = domicilio or user_row.domicilio
+    def _safe_phone(value: str | None) -> str:
+        return value if value and len(value.strip()) >= 8 else "600000000"
+
+    def _safe_address(value: str | None) -> str:
+        return value if value and len(value.strip()) >= 1 else "Dirección no disponible"
 
     full_input = TicketCreateInput(
-        nombre=nombre or "Anonimo",
-        apellidos=apellidos or "Anonimo",
-        nif=nif or "00000000A",
-        telefono=telefono or "00000000",
-        email=email or "anonimo@example.com",
+        nombre=user.nombre or "Ciudadano",
+        apellidos=user.apellidos or "Anónimo",
+        nif=_safe_nif(getattr(user, "nif", None)),
+        telefono=_safe_phone(getattr(user, "telefono", None)),
+        email=user.email,
         categoria=ticket_input.categoria,
         description=ticket_input.description,
-        direccion_persona=domicilio or "Sin domicilio",
+        direccion_persona=_safe_address(getattr(user, "domicilio", None)),
         ubicacion_incidencia=ticket_input.ubicacion_incidencia,
     )
 
     # Crear ticket normal pero con user_id
-    return await create_ticket(db, full_input, user_id=user.id)
+    record = await create_ticket(db, full_input)
+    # Actualizar user_id en el ORM
+    await db.execute(
+        update(TicketORM).where(TicketORM.id == record.id).values(user_id=user.id)
+    )
+    await db.commit()
+    return record
 
 
 async def get_tickets_for_user(

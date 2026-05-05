@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
@@ -55,22 +55,6 @@ def _translate_api_error(exc: Exception, fallback: str) -> str:
     return error_msg
 
 
-async def _set_session_and_redirect_by_role(request: Request, access_token: str) -> RedirectResponse:
-    """Store token in session and route user based on resolved backend role."""
-    request.session["access_token"] = access_token
-    role = "citizen"
-    try:
-        current_user = await api_client.me(access_token)
-        role = current_user.role or "citizen"
-    except (HTTPStatusError, RequestError) as e:
-        # If role resolution fails, keep citizen fallback to preserve login flow.
-        role = "citizen"
-
-    request.session["role"] = role
-    redirect_url = "/admin/dashboard" if role == "admin" else "/citizen/dashboard"
-    return RedirectResponse(url=redirect_url, status_code=303)
-
-
 @router.get("/register")
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
@@ -81,6 +65,19 @@ async def auth_register_redirect(request: Request):
     return RedirectResponse(url="/register", status_code=303)
 
 
+@router.get("/admin/login")
+async def admin_login_page(request: Request):
+    token = request.session.get("access_token")
+    if token:
+        try:
+            current_user = await api_client.me(token)
+            if current_user.role == "admin":
+                return RedirectResponse(url="/admin/dashboard", status_code=303)
+        except HTTPStatusError:
+            pass
+    return templates.TemplateResponse("admin_login.html", {"request": request})
+
+
 @router.get("/auth/login")
 async def auth_login_redirect(request: Request):
     return RedirectResponse(url="/", status_code=303)
@@ -88,47 +85,60 @@ async def auth_login_redirect(request: Request):
 
 @router.post("/auth/login")
 async def login(request: Request, email: str = Form(...), password: str = Form(...)):
-    credential = email.strip()
     try:
-        user_token = await api_client.login_user(credential, password)
-        return await _set_session_and_redirect_by_role(request, user_token.access_token)
+        token_response = await api_client.login_user(email, password)
+        request.session["access_token"] = token_response.access_token
+
+        # Obtener el rol real del usuario a partir del token
+        current_user = await api_client.me(token_response.access_token)
+        request.session["role"] = current_user.role
+
+        if current_user.role == "admin":
+            return RedirectResponse(url="/admin/dashboard", status_code=303)
+        return RedirectResponse(url="/citizen/dashboard", status_code=303)
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
         return templates.TemplateResponse("home.html", {"request": request, "error": error_msg})
+    except Exception as exc:
+        import logging
+        logging.exception(f"Error no controlado en login: {exc}")
+        return templates.TemplateResponse("home.html", {"request": request, "error": f"Error interno: {str(exc)}"})
 
 
 @router.post("/auth/register")
-async def register_submit(
-    request: Request,
-    nombre: str = Form(...),
-    apellidos: str = Form(...),
-    nif: str = Form(...),
-    telefono: str = Form(...),
-    email: str = Form(...),
-    domicilio: str = Form(...),
-    password: str = Form(...),
-):
+async def register(request: Request, nombre: str = Form(...), apellidos: str = Form(...), nif: str = Form(...), telefono: str = Form(...), email: str = Form(...), domicilio: str = Form(...), password: str = Form(...)):
     try:
-        token_data = await api_client.register_user(
-            nombre=nombre.strip(),
-            apellidos=apellidos.strip(),
-            nif=nif.strip(),
-            telefono=telefono.strip(),
-            email=email.strip(),
-            domicilio=domicilio.strip(),
-            password=password,
-        )
-        access_token = token_data.get("access_token")
-        if access_token:
-            return await _set_session_and_redirect_by_role(request, access_token)
-        return RedirectResponse(url="/", status_code=303)
+        await api_client.register_user(nombre, apellidos, nif, telefono, email, domicilio, password)
+        # Auto-login después de registro
+        token_response = await api_client.login_user(email, password)
+        request.session["access_token"] = token_response.access_token
+        request.session["role"] = "citizen"
+        return RedirectResponse(url="/citizen/dashboard", status_code=303)
     except (HTTPStatusError, RequestError) as exc:
-        error_msg = _translate_api_error(exc, "No se pudo completar el registro")
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": error_msg},
-        )
+        error_msg = _translate_api_error(exc, "Error al crear cuenta")
+        return templates.TemplateResponse("register.html", {"request": request, "error": error_msg})
+    except Exception as exc:
+        import logging
+        logging.exception(f"Error en registro: {exc}")
+        return templates.TemplateResponse("register.html", {"request": request, "error": f"Error interno: {str(exc)}"})
 
+
+@router.post("/auth/admin/login")
+async def admin_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    try:
+        token_response = await api_client.login_user(username, password)
+        current_user = await api_client.me(token_response.access_token)
+        if current_user.role != "admin":
+            raise HTTPException(status_code=401, detail="Credenciales inválidas.")
+
+        request.session["access_token"] = token_response.access_token
+        request.session["role"] = current_user.role
+        return RedirectResponse(url="/admin/dashboard", status_code=303)
+    except (HTTPStatusError, RequestError) as exc:
+        error_msg = _translate_api_error(exc, "Credenciales inválidas")
+        return templates.TemplateResponse("admin_login.html", {"request": request, "error": error_msg})
+    except HTTPException as exc:
+        return templates.TemplateResponse("admin_login.html", {"request": request, "error": str(exc.detail)})
 
 
 @router.post("/logout")
@@ -175,9 +185,9 @@ async def dashboard(request: Request):
 async def admin_dashboard(request: Request):
     token = request.session.get("access_token")
     role = request.session.get("role")
-
+    
     if not token or role != "admin":
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/admin/login", status_code=303)
     
     try:
         current_user = await api_client.me(token)
@@ -242,13 +252,31 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
             if ticket and ticket.get("fecha"):
                 ticket["fecha"] = _format_datetime(ticket["fecha"])
 
+            if ticket and ticket.get("status") == "pending_classification":
+                await client.patch(
+                    f"/api/v1/admin/tickets/{ticket_id}/review",
+                    headers={"Authorization": f"Bearer {token}"},
+                    json={"status": "pending_review", "notes": None},
+                )
+                ticket["status"] = "pending_review"
+
             spec_response = await client.get("/api/v1/tickets/spec")
             spec_response.raise_for_status()
             spec = spec_response.json()
-            statuses = spec.get("statuses") or []
-    except (HTTPStatusError, RequestError):
-        request.session.clear()
-        return RedirectResponse(url="/admin/login", status_code=303)
+            statuses = [s for s in (spec.get("statuses") or []) if s in ["pending_review", "resolved"]]
+    except HTTPStatusError as exc:
+        if exc.response is not None and exc.response.status_code in (401, 403):
+            request.session.clear()
+            return RedirectResponse(url="/admin/login", status_code=303)
+        raise HTTPException(
+            status_code=exc.response.status_code if exc.response is not None else 500,
+            detail="No se pudo cargar el ticket de administración.",
+        )
+    except RequestError:
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo conectar con el backend para obtener el ticket.",
+        )
 
     return templates.TemplateResponse(
         "admin_ticket_edit.html",

@@ -98,6 +98,7 @@ class TicketCreateInput(BaseModel):
         normalized = value.strip().upper()
         if not re.fullmatch(r"(?:\d{8}[A-Z]|[XYZ]\d{7}[A-Z])", normalized):
             raise ValueError("NIF/NIE debe tener formato válido.")
+        return normalized
 
 
 class TicketCreateInputForUser(BaseModel):
@@ -168,6 +169,7 @@ class TicketDashboardStats(BaseModel):
     """Estadísticas agregadas para el dashboard del admin."""
 
     total: int = 0
+    new_tickets: int = 0
     pending_review: int = 0
     open: int = 0
     resolved: int = 0

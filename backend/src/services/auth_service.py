@@ -57,97 +57,83 @@ def _build_users_db_from_settings() -> None:
         "username": username,
         "hashed_password": hashed,
         "role": "admin",
-     }
+    }
 
 
-async def authenticate_registered_user(db: AsyncSession, email: str, password: str) -> UserORM | None:
-    """Autentica usuarios registrados por email."""
-    user_result = await db.execute(select(UserORM).where(UserORM.email == email))
-    user = user_result.scalar_one_or_none()
-    if user and bcrypt.checkpw(password.encode(), user.password_hash.encode()):
-        return user
-    return None
+# ==================== FUNCIONES JWT ====================
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """Crea un JWT access token."""
+    """Crea un JWT access token con secret_key uniforme."""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
-    else:
-        expire = datetime.now(UTC) + timedelta(minutes=30)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
-
-
-async def get_current_user(db: AsyncSession, token: str) -> dict | None:
-    """Obtiene el usuario actual desde el token (para demo)."""
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-        if username in USERS_DB:
-            return {
-                "username": username,
-                "role": USERS_DB[username]["role"],
-            }
-    except JWTError:
-        return None
-    return None
-
-
-async def get_current_registered_user(db: AsyncSession, token: str) -> UserORM | None:
-    """Obtiene el usuario registrado actual desde el token."""
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        email: str = payload.get("sub")
-        if email is None:
-            return None
-        user_result = await db.execute(select(UserORM).where(UserORM.email == email))
-        return user_result.scalar_one_or_none()
-    except JWTError:
-        return None
+    expire = datetime.now(UTC) + (
+        expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
+    )
+    to_encode["exp"] = expire
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
 def decode_access_token(token: str) -> dict | None:
-    """Decodifica un JWT access token."""
+    """Decodifica un JWT access token con secret_key uniforme."""
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.jwt_algorithm],
+        )
         return payload
-    except JWTError:
+    except JWTError as exc:
+        logger.debug("Token JWT inválido o expirado: %s", exc)
         return None
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica una contraseña de empleado contra su hash bcrypt."""
-    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
-
-
-def authenticate_user(username: str, password: str) -> dict | None:
-    """Valida credenciales de empleado. Retorna None si fallan."""
-    user = USERS_DB.get(username)
-    if user is None:
-        logger.warning("Intento de login fallido: usuario '%s' no existe.", username)
-        return None
-    if not verify_password(password, user["hashed_password"]):
-        logger.warning("Contraseña incorrecta para el empleado: %s", username)
-        return None
-    return user
+# ==================== AUTENTICACIÓN DEMO (ADMIN) ====================
 
 
 def authenticate_demo_user(username: str, password: str) -> dict | None:
-    """Procesa el login y devuelve el token listo para el cliente (Empleado)."""
-    user = authenticate_user(username, password)
-    if user is None:
+    """Autentica usuarios demo (admin). Devuelve dict con token o None."""
+    if username not in USERS_DB:
+        logger.warning("Intento de login fallido: usuario '%s' no existe.", username)
         return None
-    token = create_access_token({"sub": user["username"], "role": user["role"]})
+    
+    user_info = USERS_DB[username]
+    if not bcrypt.checkpw(password.encode(), user_info["hashed_password"].encode()):
+        logger.warning("Contraseña incorrecta para el empleado: %s", username)
+        return None
+    
+    # Generar token con sub=username y role=admin
+    token = create_access_token({"sub": user_info["username"], "role": user_info["role"]})
     return {
         "access_token": token,
         "token_type": "bearer",
         "expires_in": settings.access_token_expire_minutes * 60,
     }
+
+
+# ==================== AUTENTICACIÓN USUARIOS REGISTRADOS ====================
+
+
+async def authenticate_registered_user(db: AsyncSession, email: str, password: str) -> UserORM | None:
+    """Autentica usuarios registrados por email."""
+    result = await db.execute(select(UserORM).filter(UserORM.email == email))
+    user = result.scalar()
+    if user and bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        return user
+    return None
+
+
+async def get_current_registered_user(db: AsyncSession, token: str) -> UserORM | None:
+    """Obtiene el usuario registrado actual desde el token (sub=email)."""
+    payload = decode_access_token(token)
+    if payload is None:
+        return None
+    
+    email: str = payload.get("sub")
+    if email is None:
+        return None
+    
+    result = await db.execute(select(UserORM).filter(UserORM.email == email))
+    return result.scalar()
 
 
 # Build USERS_DB from settings at import time (keeps secrets out of source)

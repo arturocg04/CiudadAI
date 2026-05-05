@@ -7,7 +7,7 @@ el servicio. En un proyecto con Alembic esto se sustituiría por las migraciones
 import logging
 
 import bcrypt
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from src.db.models import Base, UserORM
 from src.db.session import engine, AsyncSessionLocal
@@ -55,6 +55,7 @@ async def init_db() -> None:
     logger.info("Inicializando esquema de base de datos...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS user_id INTEGER"))
     logger.info("Esquema de base de datos listo.")
     
     # Crear admin por defecto

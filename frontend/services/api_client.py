@@ -92,7 +92,7 @@ class BackendApiClient:
     async def get_user_tickets(self, token: str) -> list[dict]:
         async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
             response = await client.get(
-                "/api/v1/citizen/tickets",
+                "/api/v1/citizen/my-tickets",
                 headers={"Authorization": f"Bearer {token}"},
             )
             response.raise_for_status()
