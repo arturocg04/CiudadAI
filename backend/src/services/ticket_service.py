@@ -35,6 +35,10 @@ from src.services.anonymizer import anonymize_ticket
 logger = logging.getLogger(__name__)
 
 
+class MLServiceUnavailable(Exception):
+    """Señala que el servicio ML no respondió y se debe bloquear la creación."""
+
+
 # ---------------------------------------------------------------------------
 # Helpers de conversión ORM ↔ dominio
 # ---------------------------------------------------------------------------
@@ -109,27 +113,25 @@ async def create_ticket(
     # Paso 1: anonimización (stub hasta que el compañero lo implemente)
     anon_data = anonymize_ticket(ticket_input)
 
-    # Paso 2: inferencia ML (con fallback a None)
+    # Paso 2: inferencia ML (obligatoria)
     ml_result = await call_ml_predict(
         description=ticket_input.description,
         categoria=ticket_input.categoria,
     )
 
+    if ml_result is None:
+        logger.warning("Servicio ML no disponible; se bloquea la creación del ticket.")
+        raise MLServiceUnavailable("ML service unavailable")
+
     # Paso 3: determinar estado y campos de predicción
-    if ml_result is not None:
-        ticket_status = TicketStatus.pending_review
-        prediccion_urgencia = int(ml_result.urgency)
-        prediccion_categoria = str(ml_result.category)
-        logger.info(
-            "ML predijo urgencia=%s, categoria=%s para nuevo ticket.",
-            ml_result.urgency,
-            ml_result.category,
-        )
-    else:
-        ticket_status = TicketStatus.pending_classification
-        prediccion_urgencia = None
-        prediccion_categoria = None
-        logger.info("Ticket creado sin predicción ML (servicio no disponible).")
+    ticket_status = TicketStatus.pending_review
+    prediccion_urgencia = int(ml_result.urgency)
+    prediccion_categoria = str(ml_result.category)
+    logger.info(
+        "ML predijo urgencia=%s, categoria=%s para nuevo ticket.",
+        ml_result.urgency,
+        ml_result.category,
+    )
 
     # Paso 4: persistir en BD
     ticket_orm = TicketORM(

@@ -19,6 +19,7 @@ from src.models.tickets import (
     TicketSummary,
 )
 from src.services import ticket_service
+from src.services.ticket_service import MLServiceUnavailable
 
 citizen_router = APIRouter(prefix="/citizen", tags=[API_TAGS["citizen"]])
 
@@ -39,7 +40,13 @@ async def citizen_create_ticket(
     Los datos se anonimizan y la IA predice la urgencia automáticamente.
     """
 
-    return await ticket_service.create_ticket_for_user(db, body, user)
+    try:
+        return await ticket_service.create_ticket_for_user(db, body, user)
+    except MLServiceUnavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo clasificar la incidencia en este momento. Inténtalo más tarde.",
+        )
 
 
 @citizen_router.get(

@@ -23,6 +23,7 @@ from src.models.tickets import (
     TicketSummary,
 )
 from src.services import ticket_service
+from src.services.ticket_service import MLServiceUnavailable
 
 tickets_router = APIRouter(prefix="/tickets", tags=[API_TAGS["tickets"]])
 
@@ -100,7 +101,13 @@ async def create_ticket(
     persistirlos y llama al servicio ML para predecir urgencia y categoría.
     """
 
-    return await ticket_service.create_ticket(db, body)
+    try:
+        return await ticket_service.create_ticket(db, body)
+    except MLServiceUnavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo clasificar la incidencia en este momento. Inténtalo más tarde.",
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -14,6 +14,19 @@ from src.models.tickets import (
     TicketStatus,
 )
 from src.services import ticket_service
+from src.services.ticket_service import MLServiceUnavailable
+
+
+@pytest.fixture(autouse=True)
+def mock_ml_success(monkeypatch):
+    async def _fake_predict(*_args, **_kwargs):
+        class FakeResult:
+            urgency = 3
+            category = TicketCategory.limpieza
+
+        return FakeResult()
+
+    monkeypatch.setattr("src.services.ticket_service.call_ml_predict", _fake_predict)
 
 
 @pytest.fixture
@@ -44,19 +57,18 @@ async def test_create_ticket_persists_in_db(db_session: AsyncSession, sample_inp
 
 
 @pytest.mark.asyncio
-async def test_create_ticket_status_pending_when_ml_unavailable(
-    db_session: AsyncSession, sample_input
+async def test_create_ticket_fails_when_ml_unavailable(
+    db_session: AsyncSession, sample_input, monkeypatch
 ):
-    """Sin servicio ML disponible, el ticket debe quedar en pending_classification."""
+    """Sin servicio ML disponible, se debe bloquear la creación del ticket."""
 
-    record = await ticket_service.create_ticket(db_session, sample_input)
+    async def _fake_none(*_args, **_kwargs):
+        return None
 
-    # En tests el servicio ML no está disponible, así que el estado debe ser
-    # pending_classification y los campos de modelo deben ser None.
-    assert record.status in (
-        TicketStatus.pending_classification,
-        TicketStatus.pending_review,
-    )
+    monkeypatch.setattr("src.services.ticket_service.call_ml_predict", _fake_none)
+
+    with pytest.raises(MLServiceUnavailable):
+        await ticket_service.create_ticket(db_session, sample_input)
 
 
 @pytest.mark.asyncio
@@ -107,8 +119,8 @@ async def test_admin_review_sets_final_fields(db_session: AsyncSession, sample_i
 
     assert reviewed is not None
     # La predicción de la IA se mantiene intacta tras la revisión
-    assert reviewed.prediccion_urgencia is None  # sin ML en tests
-    assert reviewed.prediccion_categoria is None  # sin ML en tests
+    assert reviewed.prediccion_urgencia is not None
+    assert reviewed.prediccion_categoria is not None
     assert reviewed.status == TicketStatus.in_progress
     assert reviewed.reviewed_by == "api_user"
     assert reviewed.reviewed_at is not None
