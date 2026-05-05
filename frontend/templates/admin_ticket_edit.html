@@ -46,6 +46,17 @@
         </label>
 
         <label>
+          Urgencia (1-5)
+          <select name="prediccion_urgencia" required>
+            {% for value in [1, 2, 3, 4, 5] %}
+              <option value="{{ value }}" {% if ticket.prediccion_urgencia == value %}selected{% endif %}>
+                {{ value }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
           Notas
           <textarea name="notes" rows="4" maxlength="2000" placeholder="Notas del admin (opcional)">{{ ticket.admin_notes or '' }}</textarea>
         </label>

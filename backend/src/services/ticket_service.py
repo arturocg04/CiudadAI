@@ -200,8 +200,8 @@ async def admin_review_ticket(
 ) -> TicketAnonymizedRecord | None:
     """Registra la respuesta del empleado y cierra la incidencia.
 
-    El empleado ya no modifica la urgencia (es definitiva de la IA),
-    pero añade notas de resolución y cambia el estado a 'resolved'.
+    El empleado puede ajustar la urgencia y cambiar el estado,
+    además de añadir notas de resolución.
     """
 
     # 1. Verificar si el ticket existe
@@ -216,6 +216,7 @@ async def admin_review_ticket(
         .where(TicketORM.id == ticket_id)
         .values(
             status=str(decision.status),
+            prediccion_urgencia=int(decision.prediccion_urgencia),
             reviewed_by=reviewer_username,
             reviewed_at=datetime.now(UTC),
             admin_notes=decision.notes,

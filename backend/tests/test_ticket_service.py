@@ -12,6 +12,7 @@ from src.models.tickets import (
     TicketCategory,
     TicketCreateInput,
     TicketStatus,
+    TicketUrgency,
 )
 from src.services import ticket_service
 from src.services.ticket_service import MLServiceUnavailable
@@ -111,6 +112,7 @@ async def test_admin_review_sets_final_fields(db_session: AsyncSession, sample_i
 
     decision = TicketAdminDecision(
         status=TicketStatus.in_progress,
+        prediccion_urgencia=TicketUrgency.high,
         notes="Revisado manualmente por admin.",
     )
     reviewed = await ticket_service.admin_review_ticket(
@@ -118,8 +120,7 @@ async def test_admin_review_sets_final_fields(db_session: AsyncSession, sample_i
     )
 
     assert reviewed is not None
-    # La predicción de la IA se mantiene intacta tras la revisión
-    assert reviewed.prediccion_urgencia is not None
+    assert reviewed.prediccion_urgencia == TicketUrgency.high
     assert reviewed.prediccion_categoria is not None
     assert reviewed.status == TicketStatus.in_progress
     assert reviewed.reviewed_by == "api_user"
@@ -132,6 +133,7 @@ async def test_admin_review_missing_ticket_returns_none(db_session: AsyncSession
 
     decision = TicketAdminDecision(
         status=TicketStatus.accepted,
+        prediccion_urgencia=TicketUrgency.medium,
     )
     result = await ticket_service.admin_review_ticket(
         db_session, ticket_id=99999, decision=decision, reviewer_username="api_user"

@@ -145,11 +145,12 @@ class TicketClassificationResult(BaseModel):
 class TicketAdminDecision(BaseModel):
     """Acción del empleado sobre un ticket.
 
-    El empleado NO puede modificar la urgencia (es definitiva del modelo ML)
-    ni la categoría. Solo puede cambiar el estado e introducir notas de resolución.
+    El empleado puede ajustar la urgencia y cambiar el estado,
+    además de introducir notas de resolución.
     """
 
     status: TicketStatus = TicketStatus.accepted
+    prediccion_urgencia: TicketUrgency
     notes: str | None = Field(default=None, max_length=2000)
 
 
