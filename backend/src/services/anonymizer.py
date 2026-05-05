@@ -1,68 +1,126 @@
-"""Stub de anonimización de datos personales — pendiente de implementación.
-
-⚠️  ESTE MÓDULO LO IMPLEMENTA EL COMPAÑERO RESPONSABLE DE ANONIMIZACIÓN.
-
-Propósito: recibir el payload crudo del ciudadano y devolver un diccionario
-con los mismos campos pero con los datos personales anonimizados, listo para
-persistir en la base de datos.
-
-Contrato esperado de la función `anonymize_ticket`:
-    - Entrada: instancia de TicketCreateInput
-    - Salida: dict con los mismos campos que TicketCreateInput pero con los
-      campos sensibles sustituidos por sus versiones anonimizadas:
-        · nombre   → e.g. "A***"
-        · apellidos → e.g. "G***** L****"
-        · nif      → "***"
-        · telefono → "***"
-        · email    → "***@***.***"
-    - Los campos no sensibles (categoria, description, etc.) deben
-      pasarse sin modificar al dict de salida.
-
-Mientras no se implemente la lógica real, la función actúa como identidad
-(pasa los datos SIN anonimizar) para que el resto del backend pueda arrancar.
-El status del ticket se fuerza a `pending_classification` igual que en el
-flujo real, así que no hay diferencia funcional en el resto del código.
-
-TODO: implementar la lógica de anonimización real aquí.
-"""
-
+import hashlib
+import hmac
 import logging
+import re
 
+from src.config import settings
 from src.models.tickets import TicketCreateInput
 
 logger = logging.getLogger(__name__)
 
 
 def anonymize_ticket(ticket_input: TicketCreateInput) -> dict:
-    """Anonimiza los datos personales de un ticket antes de persistirlo.
-
-    ⚠️  STUB: actualmente pasa los datos sin modificar.
-    Reemplazar con la lógica de anonimización real.
-
-    Args:
-        ticket_input: Payload original del ciudadano con datos personales.
-
-    Returns:
-        Diccionario con los campos del ticket listos para persistir.
-        Los campos sensibles deben estar anonimizados en la implementación real.
-    """
-
-    logger.warning(
-        "anonymize_ticket: usando stub sin anonimización real. "
-        "El compañero debe implementar este módulo."
-    )
-
-    # --- STUB: se devuelven los datos tal cual hasta que el compañero implemente esto ---
+    letra_inicial = ticket_input.nombre[0] if ticket_input.nombre else "*"
+    logger.info("Procesando anonimización para: %s***", letra_inicial)
+    pseudonym = build_pseudonym(ticket_input)
     return {
-        "nombre": ticket_input.nombre,  # TODO: anonimizar
-        "apellidos": ticket_input.apellidos,  # TODO: anonimizar
-        "nif": ticket_input.nif,  # TODO: anonimizar
-        "telefono": ticket_input.telefono,  # TODO: anonimizar
-        "email": ticket_input.email,  # TODO: anonimizar
-        # Campos no sensibles — pasar sin modificar
+        "nombre": anonimizar_valor(ticket_input.nombre, "nombre"),
+        "apellidos": anonimizar_valor(ticket_input.apellidos, "apellidos"),
+        "nif": anonimizar_valor(ticket_input.nif, "nif"),
+        "telefono": anonimizar_valor(ticket_input.telefono, "telefono"),
+        "email": anonimizar_valor(ticket_input.email, "email"),
+        "anon_fingerprint": pseudonym,
         "categoria": ticket_input.categoria,
-        "description": ticket_input.description,
+        "description": limpiar_descripcion(ticket_input.description, ticket_input),
         "direccion_persona": ticket_input.direccion_persona,
         "ubicacion_incidencia": ticket_input.ubicacion_incidencia,
         "fecha": ticket_input.fecha,
     }
+
+
+def anonimizar_valor(texto: str, tipo: str) -> str:
+    if not texto:
+        return ""
+    texto = str(texto).strip()
+    if not texto:
+        return ""
+
+    if tipo in ["nombre", "apellidos"]:
+        return f"{texto[0]}***"
+    if tipo == "nif":
+        return "[NIF_OCULTO]"
+    if tipo == "telefono":
+        return f"{texto[0]}***"
+    if tipo == "email":
+        try:
+            usuario, dominio_completo = texto.split("@")
+            partes_dominio = dominio_completo.rsplit(".", 1)
+            tld = partes_dominio[1] if len(partes_dominio) == 2 else ""
+            return f"{usuario[0]}***@***.{tld}" if tld else f"{usuario[0]}***@***"
+        except ValueError:
+            return "[EMAIL_OCULTO]"
+    return texto
+
+
+def limpiar_descripcion(descripcion: str, ticket: TicketCreateInput) -> str:
+    if not descripcion:
+        return ""
+    texto_limpio = descripcion
+    if ticket.nif:
+        texto_limpio = re.sub(
+            re.escape(ticket.nif),
+            "[NIF_OCULTO]",
+            texto_limpio,
+            flags=re.IGNORECASE,
+        )
+    if ticket.email:
+        texto_limpio = re.sub(
+            re.escape(ticket.email),
+            anonimizar_valor(ticket.email, "email"),
+            texto_limpio,
+            flags=re.IGNORECASE,
+        )
+    if ticket.telefono:
+        texto_limpio = re.sub(
+            re.escape(ticket.telefono),
+            anonimizar_valor(ticket.telefono, "telefono"),
+            texto_limpio,
+            flags=re.IGNORECASE,
+        )
+    if ticket.nombre and len(ticket.nombre) > 2:
+        texto_limpio = re.sub(
+            r"\b" + re.escape(ticket.nombre) + r"\b",
+            anonimizar_valor(ticket.nombre, "nombre"),
+            texto_limpio,
+            flags=re.IGNORECASE,
+        )
+    if ticket.apellidos and len(ticket.apellidos) > 2:
+        texto_limpio = re.sub(
+            r"\b" + re.escape(ticket.apellidos) + r"\b",
+            anonimizar_valor(ticket.apellidos, "apellidos"),
+            texto_limpio,
+            flags=re.IGNORECASE,
+        )
+
+    texto_limpio = re.sub(r"\b\d{8}\s*[A-Za-z]?\b", "[NRO_OCULTO]", texto_limpio)
+    texto_limpio = re.sub(
+        r"[\w\.-]+@[\w\.-]+\.\w+",
+        lambda m: anonimizar_valor(m.group(0), "email"),
+        texto_limpio,
+    )
+    return texto_limpio
+
+
+def build_pseudonym(ticket_input: TicketCreateInput) -> str:
+    partes = [
+        _normalize_token(ticket_input.nombre),
+        _normalize_token(ticket_input.nif),
+        _normalize_token(ticket_input.email),
+        _normalize_token(ticket_input.telefono),
+    ]
+    payload = "|".join(part for part in partes if part)
+    secret = settings.anonymizer_secret
+    if not secret:
+        return ""
+    digest = hmac.new(
+        secret.encode("utf-8"),
+        payload.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return digest[:32]
+
+
+def _normalize_token(value: str | None) -> str:
+    if not value:
+        return ""
+    return str(value).strip().lower()

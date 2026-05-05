@@ -118,6 +118,7 @@ class TicketAnonymizedRecord(BaseModel):
     nif: str
     telefono: str
     email: str
+    anon_fingerprint: str | None = None
     categoria: TicketCategory
     description: str
     fecha: datetime

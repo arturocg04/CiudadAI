@@ -39,6 +39,7 @@ def test_anonymize_returns_dict(sample_input):
         "nif",
         "telefono",
         "email",
+        "anon_fingerprint",
         "categoria",
         "description",
         "direccion_persona",
@@ -68,21 +69,28 @@ def test_anonymize_fecha_is_datetime(sample_input):
     assert result["fecha"].tzinfo is not None
 
 
-# ---------------------------------------------------------------------------
-# Este test fallará cuando el compañero implemente la anonimización real.
-# En ese momento, reemplazar este test por uno que verifique el enmascarado.
-# ---------------------------------------------------------------------------
-
-
-def test_stub_warning_fields_are_not_yet_anonymized(sample_input):
-    """STUB: este test documenta que los campos sensibles aún no están anonimizados.
-
-    Cuando el compañero implemente la lógica real, este test debe fallar y
-    reemplazarse por aserciones que verifiquen el enmascarado correcto.
-    """
-
+def test_anonymize_masks_sensitive_fields(sample_input):
     result = anonymize_ticket(sample_input)
 
-    # Mientras sea el stub, los datos originales pasan sin modificar.
-    assert result["nombre"] == sample_input.nombre  # TODO: cambiar a "A***" o similar
-    assert result["nif"] == sample_input.nif  # TODO: cambiar a "***"
+    assert result["nombre"] == "A***"
+    assert result["apellidos"] == "G***"
+    assert result["nif"] == "[NIF_OCULTO]"
+    assert result["telefono"].endswith("***")
+    assert "@***" in result["email"]
+    assert result["anon_fingerprint"]
+
+
+def test_anonymize_fingerprint_is_deterministic(sample_input):
+    first = anonymize_ticket(sample_input)
+    second = anonymize_ticket(sample_input)
+
+    assert first["anon_fingerprint"] == second["anon_fingerprint"]
+
+
+def test_anonymize_fingerprint_changes_with_name(sample_input):
+    other = sample_input.model_copy(update={"nombre": "Bea"})
+
+    first = anonymize_ticket(sample_input)
+    second = anonymize_ticket(other)
+
+    assert first["anon_fingerprint"] != second["anon_fingerprint"]

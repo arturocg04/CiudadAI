@@ -55,7 +55,12 @@ async def init_db() -> None:
     logger.info("Inicializando esquema de base de datos...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS user_id INTEGER"))
+        await conn.execute(
+            text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS user_id INTEGER")
+        )
+        await conn.execute(
+            text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS anon_fingerprint VARCHAR(128)")
+        )
     logger.info("Esquema de base de datos listo.")
     
     # Crear admin por defecto

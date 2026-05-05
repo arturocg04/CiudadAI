@@ -48,6 +48,7 @@ class TicketORM(Base):
     nif: Mapped[str] = mapped_column(String(32))
     telefono: Mapped[str] = mapped_column(String(24))
     email: Mapped[str] = mapped_column(String(254))
+    anon_fingerprint: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     # --- Datos de la incidencia ---
     categoria: Mapped[str] = mapped_column(String(60))

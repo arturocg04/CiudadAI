@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     )
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
 
+    # --- Pseudoanonimizacion ---
+    anonymizer_secret: str | None = Field(
+        default=None,
+        alias="ANONYMIZER_SECRET",
+    )
+
     # --- Credenciales hardcoded (mock de usuarios) ---
     # Usuarios gestionados en auth_service.py con hashes bcrypt.
     mock_auth_username: str | None = Field(default=None, alias="MOCK_AUTH_USERNAME")
@@ -97,6 +103,14 @@ if settings.secret_key is None:
 
 if settings.jwt_secret_key is None:
     settings.jwt_secret_key = settings.secret_key
+
+if settings.anonymizer_secret is None:
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "ANONYMIZER_SECRET not set; using SECRET_KEY for pseudoanonimization."
+    )
+    settings.anonymizer_secret = settings.secret_key
 
 if settings.mock_auth_username and settings.mock_auth_password:
     # sensible to log that demo credentials are active (no password value printed)
