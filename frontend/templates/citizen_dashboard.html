@@ -51,7 +51,7 @@
           </span>
         </div>
         <div class="ticket-content">
-          <p><strong>Categoría:</strong> {{ ticket.categoria | replace('_', ' ') | title }}</p>
+          <p><strong>Categoría:</strong> {{ (ticket.categoria or ticket.category) | replace('_', ' ') | title }}</p>
           <p><strong>Fecha:</strong> {{ ticket.fecha }}</p>
           <p><strong>Descripción:</strong> {{ ticket.description }}</p>
           <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
