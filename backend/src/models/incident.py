@@ -4,7 +4,6 @@ Propósito: definir la estructura de datos para incidencias ciudadanas con valid
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -22,8 +21,8 @@ class IncidentBase(BaseModel):
     canal: str = Field(default="App", example="App")
     direccion_persona: str = Field(..., example="Calle Obispo Hu...")
     ubicacion_incid: str = Field(..., example="37.185, -3.596 - Junto a...")
-    lid: Optional[int] = Field(None, example=1001)
-    urgencia: Optional[int] = Field(None, ge=1, le=5, example=4)
+    lid: int | None = Field(None, example=1001)
+    urgencia: int | None = Field(None, ge=1, le=5, example=4)
     fecha: datetime = Field(default_factory=datetime.utcnow)
     estado: str = Field(default="nuevo", example="nuevo")
 

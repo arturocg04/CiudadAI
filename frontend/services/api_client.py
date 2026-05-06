@@ -1,5 +1,4 @@
 import httpx
-
 from config import settings
 from schemas.api import CurrentUser, ItemsResponse, TokenResponse
 

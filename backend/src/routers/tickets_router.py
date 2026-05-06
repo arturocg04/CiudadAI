@@ -103,11 +103,11 @@ async def create_ticket(
 
     try:
         return await ticket_service.create_ticket(db, body)
-    except MLServiceUnavailable:
+    except MLServiceUnavailable as err:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No se pudo clasificar la incidencia en este momento. Inténtalo más tarde.",
-        )
+        ) from err
 
 
 # ---------------------------------------------------------------------------

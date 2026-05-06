@@ -3,8 +3,8 @@
 Propósito: definir la estructura de datos para trabajadores/personal de la plataforma.
 """
 
-from pydantic import BaseModel, Field, EmailStr
-from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class WorkerBase(BaseModel):

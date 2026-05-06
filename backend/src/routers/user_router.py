@@ -23,8 +23,8 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
         return TokenResponse(
             access_token=access_token, token_type="bearer", expires_in=1800
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
 
 @router.post("/login", response_model=TokenResponse)

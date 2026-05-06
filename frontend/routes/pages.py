@@ -1,11 +1,10 @@
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
-
 from services.api_client import api_client
 
 router = APIRouter()
@@ -175,17 +174,6 @@ async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/", status_code=303)
 
-    return templates.TemplateResponse(
-        "home.html",
-        {
-            "request": request,
-            "ticket_id": ticket_id,
-            "search_result": search_result,
-            "search_error": search_error,
-            "form_error": None,
-        },
-    )
-
 
 @router.get("/dashboard")
 async def dashboard(request: Request):
@@ -332,12 +320,12 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
         raise HTTPException(
             status_code=exc.response.status_code if exc.response is not None else 500,
             detail="No se pudo cargar el ticket de administración.",
-        )
-    except RequestError:
+        ) from exc
+    except RequestError as err:
         raise HTTPException(
             status_code=502,
             detail="No se pudo conectar con el backend para obtener el ticket.",
-        )
+        ) from err
 
     return templates.TemplateResponse(
         "admin_ticket_edit.html",
@@ -471,7 +459,7 @@ async def citizen_report_submit(
             for ticket in citizen_tickets:
                 if ticket.get("fecha"):
                     ticket["fecha"] = _format_datetime(ticket["fecha"])
-        except:
+        except Exception:
             pass
         return templates.TemplateResponse(
             "citizen_dashboard.html",

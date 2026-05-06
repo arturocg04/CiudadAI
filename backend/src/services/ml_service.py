@@ -6,8 +6,6 @@ se cargaría un modelo real entrenado con el dataset.
 """
 
 import logging
-import random
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.common.responses import COMMON_ERROR_RESPONSES
 from src.constants import API_TAGS
 from src.db.session import get_db
-from src.deps import get_current_registered_user, oauth2_scheme
+from src.deps import oauth2_scheme
 from src.models.auth import CurrentUser, LoginInput, TokenResponse
 from src.services.auth_service import (
     authenticate_demo_user,

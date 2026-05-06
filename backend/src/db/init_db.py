@@ -10,7 +10,7 @@ import bcrypt
 from sqlalchemy import select, text
 
 from src.db.models import Base, UserORM
-from src.db.session import engine, AsyncSessionLocal
+from src.db.session import AsyncSessionLocal, engine
 
 logger = logging.getLogger(__name__)
 

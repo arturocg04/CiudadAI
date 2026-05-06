@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import nltk
 import numpy as np
 import pandas as pd
-import nltk
 from fastapi import FastAPI, HTTPException
+from nltk.corpus import stopwords
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -12,7 +13,6 @@ from tensorflow import keras
 from tensorflow.keras import layers, models
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.regularizers import l2
-from nltk.corpus import stopwords
 
 
 class PredictInput(BaseModel):

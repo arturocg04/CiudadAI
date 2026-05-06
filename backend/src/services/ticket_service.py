@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.ml_client import call_ml_predict
 from src.db.models import TicketORM
-from src.models.auth import CurrentUser
 from src.models.tickets import (
     TicketAdminDecision,
     TicketAnonymizedRecord,
