@@ -1,7 +1,40 @@
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-scikit-learn>=1.3.0
-transformers>=4.35.0
-tensorflow-cpu>=2.14.0
-joblib>=1.3.0
-pydantic>=2.5.0
+# ========================================================================
+# DEPENDENCIAS PARA CIUDADAI - MODELO DE CLASIFICACIÓN DE URGENCIAS
+# ========================================================================
+# 
+# Para instalar todas las dependencias:
+#   pip install -r requirements.txt
+#
+# Si tienes problemas con PyTorch en CPU:
+#   pip install --no-cache-dir torch==2.0.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+#
+
+# Manipulación de datos y computación
+pandas>=1.3.0
+numpy>=1.21.0
+
+# Visualización
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Machine Learning clásico
+scikit-learn>=1.0.0
+
+# Deep Learning
+tensorflow>=2.10.0
+
+# Modelos Transformer (BETO para NLP en español)
+transformers>=4.20.0
+
+# Backend para transformers (REQUERIDO)
+# Nota: Se instala automáticamente con transformers, pero asegúrate que está actualizado
+torch>=1.10.0
+
+# SMOTE para manejo de desbalanceo de clases
+imbalanced-learn>=0.9.0
+
+# Procesamiento de lenguaje natural (stopwords)
+nltk>=3.6.0
+
+# Utilidades científicas
+scipy>=1.7.0
