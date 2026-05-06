@@ -180,7 +180,7 @@ async def list_tickets(
 
     query = (
         select(TicketORM)
-        .order_by(TicketORM.created_at.desc())
+        .order_by(TicketORM.prediccion_urgencia.desc().nulls_last(), TicketORM.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
