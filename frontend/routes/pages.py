@@ -245,7 +245,7 @@ async def admin_dashboard(request: Request):
                 # Listar todos los tickets creados (sin filtrar por estado)
                 "/api/v1/tickets",
                 headers={"Authorization": f"Bearer {token}"},
-                params={"limit": 10},
+                params={"limit": 100},
             )
             tickets_response.raise_for_status()
             admin_tickets = tickets_response.json()
