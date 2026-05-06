@@ -62,7 +62,18 @@
           <p><strong>Descripción:</strong> {{ ticket.description }}</p>
           <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
           {% if ticket.admin_notes %}
-          <p><strong>Respuesta admin:</strong> {{ ticket.admin_notes }}</p>
+          <div class="admin-response">
+            <div class="admin-response-header">
+              <span class="admin-response-label">Respuesta del administrador</span>
+              {% if ticket.reviewed_by %}
+              <span class="admin-response-meta">por {{ ticket.reviewed_by }}</span>
+              {% endif %}
+              {% if ticket.reviewed_at %}
+              <span class="admin-response-meta">{{ ticket.reviewed_at | default('') }}</span>
+              {% endif %}
+            </div>
+            <div class="admin-response-content">{{ ticket.admin_notes }}</div>
+          </div>
           {% endif %}
         </div>
       </div>
@@ -74,4 +85,97 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+  .admin-response {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-left: 4px solid #0ea5e9;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .admin-response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-response-label {
+    font-weight: 600;
+    color: #0c4a6e;
+    font-size: 0.9rem;
+  }
+
+  .admin-response-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  .admin-response-content {
+    color: #1e293b;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+  }
+
+  .ticket-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .ticket-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .ticket-id {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.1rem;
+  }
+
+  .ticket-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .ticket-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .ticket-status.resolved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .ticket-content p {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .ticket-content strong {
+    color: #374151;
+    font-weight: 600;
+  }
+</style>
 {% endblock %}

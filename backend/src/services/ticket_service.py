@@ -23,6 +23,7 @@ from src.models.tickets import (
     TicketAdminDecision,
     TicketAnonymizedRecord,
     TicketCategory,
+    TicketCitizenView,
     TicketCreateInput,
     TicketCreateInputForUser,
     TicketDashboardStats,
@@ -88,6 +89,27 @@ def _orm_to_summary(row: TicketORM) -> TicketSummary:
         if row.prediccion_categoria
         else None,
         admin_notes=row.admin_notes,
+    )
+
+
+def _orm_to_citizen_view(row: TicketORM) -> TicketCitizenView:
+    """Convierte una fila ORM a la vista del ciudadano con notas de admin."""
+    return TicketCitizenView(
+        id=row.id,  # type: ignore[arg-type]
+        category=TicketCategory(row.categoria),
+        status=TicketStatus(row.status),
+        fecha=row.fecha,
+        ubicacion_incidencia=row.ubicacion_incidencia,
+        description=row.description,
+        prediccion_urgencia=TicketUrgency(row.prediccion_urgencia)
+        if row.prediccion_urgencia
+        else None,
+        prediccion_categoria=TicketCategory(row.prediccion_categoria)
+        if row.prediccion_categoria
+        else None,
+        admin_notes=row.admin_notes,
+        reviewed_by=row.reviewed_by,
+        reviewed_at=row.reviewed_at,
     )
 
 
@@ -399,3 +421,15 @@ async def get_tickets_for_user(
     result = await db.execute(query)
     rows = result.scalars().all()
     return [_orm_to_summary(row) for row in rows]
+
+
+async def get_tickets_for_user_with_admin_notes(
+    db: AsyncSession,
+    user_id: int,
+) -> list[TicketCitizenView]:
+    """Obtiene los tickets de un usuario con notas del administrador."""
+
+    query = select(TicketORM).where(TicketORM.user_id == user_id).order_by(TicketORM.created_at.desc())
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [_orm_to_citizen_view(row) for row in rows]

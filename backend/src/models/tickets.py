@@ -168,6 +168,22 @@ class TicketSummary(BaseModel):
     admin_notes: str | None = None
 
 
+class TicketCitizenView(BaseModel):
+    """Vista del ticket para ciudadanos que incluye notas del admin."""
+
+    id: int
+    category: TicketCategory
+    prediccion_urgencia: TicketUrgency | None = None
+    prediccion_categoria: TicketCategory | None = None
+    status: TicketStatus
+    fecha: datetime
+    ubicacion_incidencia: str
+    description: str
+    admin_notes: str | None = None
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+
+
 class TicketDashboardStats(BaseModel):
     """Estadísticas agregadas para el dashboard del admin."""
 
