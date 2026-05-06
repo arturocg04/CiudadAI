@@ -23,7 +23,7 @@ def _format_datetime(value: str | datetime | None) -> str | None:
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             return str(value)
-    return dt.strftime("%d/%m/%Y %H:%M")
+    return dt.strftime("%d/%m/%Y %H:%M:%S")
 
 
 @router.get("/")
@@ -298,6 +298,8 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
             ticket = ticket_response.json()
             if ticket and ticket.get("fecha"):
                 ticket["fecha"] = _format_datetime(ticket["fecha"])
+            if ticket and ticket.get("reviewed_at"):
+                ticket["reviewed_at"] = _format_datetime(ticket["reviewed_at"])
 
             if ticket and ticket.get("status") == "pending_classification":
                 await client.patch(
@@ -394,6 +396,8 @@ async def admin_ticket_review_submit(
                 ticket = ticket_response.json()
                 if ticket and ticket.get("fecha"):
                     ticket["fecha"] = _format_datetime(ticket["fecha"])
+                if ticket and ticket.get("reviewed_at"):
+                    ticket["reviewed_at"] = _format_datetime(ticket["reviewed_at"])
                 spec_response = await client.get("/api/v1/tickets/spec")
                 spec_response.raise_for_status()
                 statuses = [
@@ -508,6 +512,8 @@ async def citizen_dashboard(request: Request):
         for ticket in citizen_tickets:
             if ticket.get("fecha"):
                 ticket["fecha"] = _format_datetime(ticket["fecha"])
+            if ticket.get("reviewed_at"):
+                ticket["reviewed_at"] = _format_datetime(ticket["reviewed_at"])
     except (HTTPStatusError, RequestError):
         request.session.clear()
         return RedirectResponse(url="/", status_code=303)

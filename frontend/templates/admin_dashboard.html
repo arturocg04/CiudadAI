@@ -44,12 +44,13 @@
   <section class="card tickets-panel wide-card" id="admin-tickets-panel">
     <h2>Tickets recientes</h2>
     <div class="status-toggle">
-      <a href="/admin/dashboard?status=pending_review" class="button toggle{% if selected_status == 'pending_review' %} active{% endif %}" onclick="sessionStorage.setItem('admin_dashboard_scroll', window.scrollY)">Pendientes</a>
-      <a href="/admin/dashboard?status=resolved" class="button toggle{% if selected_status == 'resolved' %} active secondary{% endif %}" onclick="sessionStorage.setItem('admin_dashboard_scroll', window.scrollY)">Cerrados</a>
+      <button class="button toggle active" onclick="showTab('pending')">Pendientes</button>
+      <button class="button toggle secondary" onclick="showTab('resolved')">Cerrados</button>
     </div>
-    {% if admin_tickets and admin_tickets | length > 0 %}
-    <div class="tickets-table-container">
-      <table class="ticket-table wide-table">
+    <div id="pending-tickets" class="tab-content active">
+      {% if admin_tickets and admin_tickets | length > 0 %}
+      <div class="tickets-table-container">
+        <table class="ticket-table wide-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -65,6 +66,7 @@
       </thead>
       <tbody>
         {% for ticket in admin_tickets %}
+          {% if ticket.status != 'resolved' %}
         <tr>
           <td>{{ ticket.id }}</td>
           <td>{{ ticket.category }}</td>
@@ -75,18 +77,59 @@
           <td>{{ ticket.fecha }}</td>
           <td><a class="button-link" href="/admin/tickets/{{ ticket.id }}">Editar</a></td>
           <td>
-            <form method="post" action="/admin/tickets/{{ ticket.id }}/delete?status={{ selected_status }}" class="inline-delete-form">
-              <button type="submit" class="icon-delete icon-delete-sm" title="Eliminar ticket">×</button>
-            </form>
+            <button type="button" class="icon-delete icon-delete-sm delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
           </td>
         </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>
     </div>
     {% else %}
-    <p>No hay tickets recientes para mostrar.</p>
+    <p>No hay tickets pendientes para mostrar.</p>
     {% endif %}
+  </div>
+  
+  <div id="resolved-tickets" class="tab-content">
+    <div class="tickets-table-container">
+      <table class="ticket-table wide-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Categoría</th>
+            <th>Estado</th>
+            <th>Urgencia</th>
+            <th>Ubicación</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in admin_tickets %}
+            {% if ticket.status == 'resolved' %}
+            <tr>
+              <td>{{ ticket.id }}</td>
+              <td>{{ ticket.category }}</td>
+              <td>Cerrado</td>
+              <td>{{ ticket.prediccion_urgencia or 'N/A' }}</td>
+              <td>{{ ticket.ubicacion_incidencia }}</td>
+              <td class="description-cell">{{ ticket.description[:120] }}{% if ticket.description|length > 120 %}...{% endif %}</td>
+              <td>{{ ticket.fecha }}</td>
+              <td><a class="button-link" href="/admin/tickets/{{ ticket.id }}">Editar</a></td>
+              <td>
+                <button type="button" class="icon-delete icon-delete-sm delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if not admin_tickets or admin_tickets | selectattr('status') == 'resolved' | length == 0 %}
+    <p>No hay tickets cerrados para mostrar.</p>
+    {% endif %}
+  </div>
   </section>
 </div>
 
@@ -341,6 +384,42 @@
     border-bottom: 2px solid #e6ecf8;
     background: #f8fafc;
   }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .status-toggle {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1rem 0 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .status-toggle .button.toggle {
+    background: #ffffff;
+    border: 1px solid rgba(15, 110, 86, 0.16);
+    color: var(--primary);
+    padding: 10px 18px;
+    min-height: auto;
+    border-radius: 999px;
+    text-transform: none;
+    font-weight: 700;
+  }
+
+  .status-toggle .button.toggle.secondary {
+    color: var(--text);
+  }
+
+  .status-toggle .button.toggle.active {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 14px 30px rgba(15, 110, 86, 0.18);
+  }
 </style>
 
 <script>
@@ -351,5 +430,77 @@
       sessionStorage.removeItem('admin_dashboard_scroll');
     }
   });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add event delegation for admin delete buttons
+  document.addEventListener('click', async function(event) {
+    if (event.target.classList.contains('delete-ticket-btn')) {
+      event.preventDefault();
+      
+      const ticketId = event.target.getAttribute('data-ticket-id');
+      if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/tickets/${ticketId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        });
+
+        if (response.ok) {
+          // Find and remove the table row
+          const button = event.target;
+          const row = button.closest('tr');
+          if (row) {
+            row.remove();
+          }
+          
+          // Check if there are no more tickets in current tab
+          const activeTab = document.querySelector('.tab-content.active');
+          const tableBody = activeTab.querySelector('.ticket-table tbody');
+          if (tableBody && tableBody.children.length === 0) {
+            const tableContainer = activeTab.querySelector('.tickets-table-container');
+            if (tableContainer) {
+              tableContainer.innerHTML = '<p>No hay tickets en esta categoría para mostrar.</p>';
+            }
+          }
+        } else {
+          alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+      }
+    }
+  });
+});
+
+function showTab(tabName) {
+  // Hide all tabs
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+  
+  // Hide all buttons
+  const buttons = document.querySelectorAll('.status-toggle button');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + '-tickets');
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+  
+  // Highlight selected button
+  const selectedButton = document.querySelector(`.status-toggle button:nth-child(${tabName === 'pending' ? '1' : '2'})`);
+  if (selectedButton) {
+    selectedButton.classList.add('active');
+  }
+}
+</script>
 </script>
 {% endblock %}

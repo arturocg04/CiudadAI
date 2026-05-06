@@ -40,11 +40,17 @@
 
   <div class="tickets-panel card">
     <h2>Mis reportes</h2>
+    <div class="status-toggle">
+      <button class="button toggle active" onclick="showTab('pending')">Pendientes</button>
+      <button class="button toggle secondary" onclick="showTab('resolved')">Cerrados</button>
+    </div>
     {% if citizen_tickets %}
     <div class="tickets-panel-inner">
-      <div class="tickets-list">
+      <div id="pending-tickets" class="tab-content active">
+        <div class="tickets-list">
         {% for ticket in citizen_tickets %}
-      <div class="ticket-item">
+          {% if ticket.status != 'resolved' %}
+      <div class="ticket-item" data-ticket-id="{{ ticket.id }}">
         <div class="ticket-header">
           <div class="ticket-header-left">
             <span class="ticket-id">#{{ ticket.id }}</span>
@@ -52,9 +58,7 @@
               {{ 'Pendiente' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'Resuelto' }}
             </span>
           </div>
-          <form method="post" action="/citizen/tickets/{{ ticket.id }}/delete" class="ticket-delete-form">
-            <button type="submit" class="icon-delete small" title="Eliminar ticket">×</button>
-          </form>
+          <button type="button" class="icon-delete small delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
         </div>
         <div class="ticket-content">
           <p><strong>Categoría:</strong> {{ (ticket.categoria or ticket.category) | replace('_', ' ') | title }}</p>
@@ -62,18 +66,265 @@
           <p><strong>Descripción:</strong> {{ ticket.description }}</p>
           <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
           {% if ticket.admin_notes %}
-          <div class="admin-reply">
-          <p><strong>Respuesta admin:</strong> {{ ticket.admin_notes }}</p>
+          <div class="admin-response">
+            <div class="admin-response-header">
+              <span class="admin-response-label">Respuesta del administrador</span>
+              {% if ticket.reviewed_by %}
+              <span class="admin-response-meta">por {{ ticket.reviewed_by }}</span>
+              {% endif %}
+              {% if ticket.reviewed_at %}
+              <span class="admin-response-meta">{{ ticket.reviewed_at | default('') }}</span>
+              {% endif %}
+            </div>
+            <div class="admin-response-content">{{ ticket.admin_notes }}</div>
           </div>
           {% endif %}
         </div>
       </div>
+          {% endif %}
       {% endfor %}
       </div>
     </div>
+    <div id="resolved-tickets" class="tab-content">
+      <div class="tickets-list">
+        {% for ticket in citizen_tickets %}
+        {% if ticket.status == 'resolved' %}
+        <div class="ticket-item" data-ticket-id="{{ ticket.id }}">
+          <div class="ticket-header">
+            <div class="ticket-header-left">
+              <span class="ticket-id">#{{ ticket.id }}</span>
+              <span class="ticket-status resolved">Resuelto</span>
+            </div>
+            <button type="button" class="icon-delete small delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
+          </div>
+          <div class="ticket-content">
+            <p><strong>Categoría:</strong> {{ (ticket.categoria or ticket.category) | replace('_', ' ') | title }}</p>
+            <p><strong>Fecha:</strong> {{ ticket.fecha }}</p>
+            <p><strong>Descripción:</strong> {{ ticket.description }}</p>
+            <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
+            {% if ticket.admin_notes %}
+            <div class="admin-response">
+              <div class="admin-response-header">
+                <span class="admin-response-label">Respuesta del administrador</span>
+                {% if ticket.reviewed_by %}
+                <span class="admin-response-meta">por {{ ticket.reviewed_by }}</span>
+                {% endif %}
+                {% if ticket.reviewed_at %}
+                <span class="admin-response-meta">{{ ticket.reviewed_at | default('') }}</span>
+                {% endif %}
+              </div>
+              <div class="admin-response-content">{{ ticket.admin_notes }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% if not citizen_tickets or citizen_tickets | selectattr('status') | list | length == 0 %}
+      <p>No tienes reportes resueltos.</p>
+      {% endif %}
+    </div>
     {% else %}
-    <p>No tienes reportes aún.</p>
+      <p>No tienes reportes aún.</p>
     {% endif %}
   </div>
 </div>
+
+<style>
+  .admin-response {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-left: 4px solid #0ea5e9;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .admin-response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-response-label {
+    font-weight: 600;
+    color: #0c4a6e;
+    font-size: 0.9rem;
+  }
+
+  .admin-response-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  .admin-response-content {
+    color: #1e293b;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+  }
+
+  .ticket-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .ticket-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .ticket-id {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.1rem;
+  }
+
+  .ticket-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .ticket-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .ticket-status.resolved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .ticket-content p {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .ticket-content strong {
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .status-toggle {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1rem 0 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .status-toggle .button.toggle {
+    background: #ffffff;
+    border: 1px solid rgba(15, 110, 86, 0.16);
+    color: var(--primary);
+    padding: 10px 18px;
+    min-height: auto;
+    border-radius: 999px;
+    text-transform: none;
+    font-weight: 700;
+  }
+
+  .status-toggle .button.toggle.secondary {
+    color: var(--text);
+  }
+
+  .status-toggle .button.toggle.active {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 14px 30px rgba(15, 110, 86, 0.18);
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add event delegation for delete buttons
+  document.addEventListener('click', async function(event) {
+    if (event.target.classList.contains('delete-ticket-btn')) {
+      event.preventDefault();
+      
+      const ticketId = event.target.getAttribute('data-ticket-id');
+      if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/citizen/tickets/${ticketId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        });
+
+        if (response.ok) {
+          // Find and remove the ticket element
+          const ticketElement = document.querySelector(`[data-ticket-id="${ticketId}"]`);
+          if (ticketElement) {
+            ticketElement.remove();
+          }
+          
+          // Check if there are no more tickets in current tab
+          const activeTab = document.querySelector('.tab-content.active');
+          const ticketsList = activeTab.querySelector('.tickets-list');
+          if (ticketsList && ticketsList.children.length === 0) {
+            ticketsList.innerHTML = '<p>No tienes reportes en esta categoría.</p>';
+          }
+        } else {
+          alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+      }
+    }
+  });
+});
+
+function showTab(tabName) {
+  // Hide all tabs
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+  
+  // Hide all buttons
+  const buttons = document.querySelectorAll('.status-toggle button');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + '-tickets');
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+  
+  // Highlight selected button
+  const selectedButton = document.querySelector(`.status-toggle button:nth-child(${tabName === 'pending' ? '1' : '2'})`);
+  if (selectedButton) {
+    selectedButton.classList.add('active');
+  }
+}
+</script>
+</script>
 {% endblock %}

@@ -14,6 +14,7 @@ from src.deps import get_current_registered_user_dep
 from src.models.auth import CurrentUser
 from src.models.tickets import (
     TicketAnonymizedRecord,
+    TicketCitizenView,
     TicketCreateInputForUser,
     TicketStatus,
     TicketSummary,
@@ -58,10 +59,10 @@ async def citizen_create_ticket(
 async def citizen_list_my_tickets(
     user: CurrentUser = Depends(get_current_registered_user_dep),
     db: AsyncSession = Depends(get_db),
-) -> list[TicketSummary]:
-    """Devuelve los tickets del usuario actual."""
+) -> list[TicketCitizenView]:
+    """Devuelve los tickets del usuario actual con notas del administrador."""
 
-    return await ticket_service.get_tickets_for_user(db, user.id)
+    return await ticket_service.get_tickets_for_user_with_admin_notes(db, user.id)
 
 
 @citizen_router.delete(
