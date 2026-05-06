@@ -355,7 +355,7 @@ async def get_tickets_for_user(
 ) -> list[TicketSummary]:
     """Obtiene los tickets de un usuario."""
 
-    query = select(TicketORM).where(TicketORM.user_id == user_id)
+    query = select(TicketORM).where(TicketORM.user_id == user_id).order_by(TicketORM.created_at.desc())
     result = await db.execute(query)
     rows = result.scalars().all()
     return [_orm_to_summary(row) for row in rows]
