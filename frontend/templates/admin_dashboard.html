@@ -75,9 +75,7 @@
           <td>{{ ticket.fecha }}</td>
           <td><a class="button-link" href="/admin/tickets/{{ ticket.id }}">Editar</a></td>
           <td>
-            <form method="post" action="/admin/tickets/{{ ticket.id }}/delete?status={{ selected_status }}" class="inline-delete-form">
-              <button type="submit" class="icon-delete icon-delete-sm" title="Eliminar ticket">×</button>
-            </form>
+            <button type="button" class="icon-delete icon-delete-sm delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
           </td>
         </tr>
         {% endfor %}
@@ -351,5 +349,53 @@
       sessionStorage.removeItem('admin_dashboard_scroll');
     }
   });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add event delegation for admin delete buttons
+  document.addEventListener('click', async function(event) {
+    if (event.target.classList.contains('delete-ticket-btn')) {
+      event.preventDefault();
+      
+      const ticketId = event.target.getAttribute('data-ticket-id');
+      if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/tickets/${ticketId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        });
+
+        if (response.ok) {
+          // Find and remove the table row
+          const button = event.target;
+          const row = button.closest('tr');
+          if (row) {
+            row.remove();
+          }
+          
+          // Check if there are no more tickets
+          const tableBody = document.querySelector('.ticket-table tbody');
+          if (tableBody && tableBody.children.length === 0) {
+            const tableContainer = document.querySelector('.tickets-table-container');
+            if (tableContainer) {
+              tableContainer.innerHTML = '<p>No hay tickets recientes para mostrar.</p>';
+            }
+          }
+        } else {
+          alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
+      }
+    }
+  });
+});
 </script>
 {% endblock %}
