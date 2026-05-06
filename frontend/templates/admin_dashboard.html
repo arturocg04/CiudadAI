@@ -44,7 +44,8 @@
   <section class="card tickets-panel wide-card">
     <h2>Tickets recientes</h2>
     {% if admin_tickets and admin_tickets | length > 0 %}
-    <table class="ticket-table wide-table">
+    <div class="tickets-table-container">
+      <table class="ticket-table wide-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -72,6 +73,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <p>No hay tickets recientes para mostrar.</p>
     {% endif %}
@@ -227,6 +229,50 @@
 
   .button.secondary:hover {
     background: #0d7f62;
+  }
+
+  .tickets-table-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid #e6ecf8;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+
+  .tickets-table-container::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .tickets-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .tickets-table-container::-webkit-scrollbar-thumb {
+    background: rgba(15, 110, 86, 0.3);
+    border-radius: 4px;
+  }
+
+  .tickets-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 110, 86, 0.5);
+  }
+
+  .tickets-table-container .ticket-table {
+    margin-top: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .tickets-table-container .ticket-table thead {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+  }
+
+  .tickets-table-container .ticket-table thead th {
+    border-bottom: 2px solid #e6ecf8;
+    background: #f8fafc;
   }
 </style>
 {% endblock %}
