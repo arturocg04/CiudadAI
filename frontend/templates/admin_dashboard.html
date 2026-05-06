@@ -30,10 +30,6 @@
       <h2>Estadísticas</h2>
       <div class="summary-grid stats-simple">
         <div class="summary-card">
-          <span>Nuevos</span>
-          <strong>{{ admin_stats.new_tickets }}</strong>
-        </div>
-        <div class="summary-card">
           <span>Pendientes</span>
           <strong>{{ admin_stats.pending_review }}</strong>
         </div>
@@ -66,7 +62,7 @@
         <tr>
           <td>{{ ticket.id }}</td>
           <td>{{ ticket.category }}</td>
-          <td>{{ ticket.status }}</td>
+          <td>{{ 'Cerrado' if ticket.status == 'resolved' else 'Pendiente' }}</td>
           <td>{{ ticket.prediccion_urgencia or 'N/A' }}</td>
           <td>{{ ticket.ubicacion_incidencia }}</td>
           <td class="description-cell">{{ ticket.description[:120] }}{% if ticket.description|length > 120 %}...{% endif %}</td>
@@ -100,7 +96,7 @@
     align-items: center;
     gap: 1rem;
     padding: 2rem 2.25rem;
-    background: linear-gradient(135deg, #001f5b 0%, #0a3f95 45%, #1348c1 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 45%, rgba(93, 202, 165, 1) 100%);
     color: white;
     border-radius: 24px;
     min-height: 140px;
@@ -120,13 +116,13 @@
   .admin-info {
     padding: 1.75rem;
     border-radius: 24px;
-    border: 1px solid rgba(0, 31, 91, 0.12);
+    border: 1px solid rgba(15, 110, 86, 0.12);
     background: #ffffff;
   }
 
   .badge {
     display: inline-block;
-    background: #0a3f95;
+    background: var(--secondary);
     color: white;
     padding: 0.45rem 0.95rem;
     border-radius: 999px;
@@ -142,7 +138,7 @@
 
   .summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
     gap: 1rem;
     margin-top: 1.25rem;
   }
@@ -150,24 +146,24 @@
   .summary-card {
     padding: 1.2rem;
     border-radius: 22px;
-    background: rgba(10, 64, 149, 0.08);
-    border: 1px solid rgba(10, 64, 149, 0.16);
+    background: rgba(15, 110, 86, 0.08);
+    border: 1px solid rgba(15, 110, 86, 0.16);
     display: grid;
     gap: 0.5rem;
   }
 
   .summary-card span {
-    color: #2f4f80;
+    color: var(--secondary);
   }
 
   .summary-card strong {
     font-size: 1.55rem;
-    color: #001f5b;
+    color: var(--primary);
   }
 
   .summary-card.accent {
-    background: rgba(0, 31, 91, 0.08);
-    border-color: rgba(0, 31, 91, 0.18);
+    background: rgba(15, 110, 86, 0.12);
+    border-color: rgba(15, 110, 86, 0.22);
   }
 
   .ticket-table {
@@ -192,7 +188,7 @@
   }
 
   .ticket-table tbody tr:hover {
-    background: rgba(0, 31, 91, 0.04);
+    background: rgba(15, 110, 86, 0.08);
   }
 
   .ticket-table td.description-cell {
@@ -206,15 +202,15 @@
     justify-content: center;
     padding: 10px 14px;
     border-radius: 999px;
-    background: rgba(0, 31, 91, 0.08);
-    color: #001f5b;
+    background: rgba(15, 110, 86, 0.1);
+    color: var(--primary);
     font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
   }
 
   .button-link:hover {
-    background: rgba(0, 31, 91, 0.12);
+    background: rgba(15, 110, 86, 0.16);
   }
 
   .wide-card {
@@ -226,11 +222,11 @@
   }
 
   .button.secondary {
-    background: #0a3f95;
+    background: var(--secondary);
   }
 
   .button.secondary:hover {
-    background: #082f74;
+    background: #0d7f62;
   }
 </style>
 {% endblock %}

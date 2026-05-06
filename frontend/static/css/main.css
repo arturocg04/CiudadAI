@@ -92,19 +92,26 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(0, 31, 91, 0.12);
 }
 
-button {
+button,
+a.button {
   cursor: pointer;
   border: none;
   border-radius: 999px;
-  padding: 14px 18px;
+  padding: 16px 26px;
+  min-height: 54px;
   color: #fff;
   background: var(--primary);
   font-weight: 700;
+  font-size: 0.95rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  line-height: 1;
 }
 
-button.secondary {
+a.button.secondary,
+button.secondary,
+.button.secondary {
   background: var(--secondary);
 }
 
@@ -321,15 +328,12 @@ a.button,
 }
 
 .summary-card.accent {
-  background: var(--secondary);
+  background: #0d7f62;
   color: white;
-  border-color: var(--secondary);
+  border-color: #0b6e56;
 }
 
-.summary-card.accent span {
-  color: rgba(255, 255, 255, 0.9);
-}
-
+.summary-card.accent span,
 .summary-card.accent strong {
   color: white;
 }
@@ -525,21 +529,67 @@ a.button,
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
+  padding: 2rem 2.25rem;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 45%, rgba(93, 202, 165, 1) 100%);
+  color: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(15, 110, 86, 0.15);
+  min-height: 140px;
+}
+
+.citizen-header h1 {
+  margin: 0;
+  font-size: 2rem;
 }
 
 .citizen-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  align-items: stretch;
 }
 
-.form-panel {
+.form-panel,
+.citizen-grid .tickets-panel {
+  padding: 2rem;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.citizen-grid .tickets-panel {
+  max-height: 72vh;
+  overflow: hidden;
   padding: 2rem;
 }
 
-.tickets-panel {
-  padding: 2rem;
+.citizen-grid .tickets-panel-inner {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.9rem;
+  width: calc(100% - 1rem);
+  margin-right: 1rem;
+  min-width: 0;
+}
+
+.citizen-grid .tickets-panel-inner::-webkit-scrollbar {
+  width: 12px;
+}
+
+.citizen-grid .tickets-panel-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.citizen-grid .tickets-panel-inner::-webkit-scrollbar-thumb {
+  background: rgba(15, 110, 86, 0.25);
+  border-radius: 999px;
+}
+
+.citizen-grid .tickets-panel-inner {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 110, 86, 0.25) transparent;
 }
 
 .tickets-list {
@@ -570,16 +620,20 @@ a.button,
 }
 
 .ticket-status.resolved {
-  background: rgba(8, 80, 65, 0.1);
-  color: var(--text);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  background: rgba(15, 110, 86, 0.15);
+  color: #053927;
+  padding: 0.35rem 0.65rem;
+  border-radius: 12px;
   font-size: 0.875rem;
 }
 
-.button.logout {
-  background: var(--danger);
+.citizen-header .button.logout {
+  background: var(--secondary);
   color: white;
+}
+
+.citizen-header .button.logout:hover {
+  background: #0d7f62;
 }
 
 /* Buttons */

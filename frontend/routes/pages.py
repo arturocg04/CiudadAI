@@ -294,6 +294,7 @@ async def admin_ticket_review_submit(
     request: Request,
     ticket_id: int,
     status: str = Form(...),
+    prediccion_urgencia: int = Form(...),
     notes: str = Form(""),
 ):
     token = request.session.get("access_token")
@@ -307,7 +308,11 @@ async def admin_ticket_review_submit(
             response = await client.patch(
                 f"/api/v1/admin/tickets/{ticket_id}/review",
                 headers={"Authorization": f"Bearer {token}"},
-                json={"status": status, "notes": (notes or None)},
+                json={
+                    "status": status,
+                    "prediccion_urgencia": prediccion_urgencia,
+                    "notes": (notes or None),
+                },
             )
             response.raise_for_status()
     except HTTPStatusError as exc:
@@ -334,7 +339,7 @@ async def admin_ticket_review_submit(
                     ticket["fecha"] = _format_datetime(ticket["fecha"])
                 spec_response = await client.get("/api/v1/tickets/spec")
                 spec_response.raise_for_status()
-                statuses = (spec_response.json().get("statuses") or [])
+                statuses = [s for s in (spec_response.json().get("statuses") or []) if s in ["pending_review", "resolved"]]
         except Exception:
             return RedirectResponse(url="/admin/dashboard", status_code=303)
 

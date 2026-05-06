@@ -41,8 +41,9 @@
   <div class="tickets-panel card">
     <h2>Mis reportes</h2>
     {% if citizen_tickets %}
-    <div class="tickets-list">
-      {% for ticket in citizen_tickets %}
+    <div class="tickets-panel-inner">
+      <div class="tickets-list">
+        {% for ticket in citizen_tickets %}
       <div class="ticket-item">
         <div class="ticket-header">
           <span class="ticket-id">#{{ ticket.id }}</span>
@@ -61,6 +62,7 @@
         </div>
       </div>
       {% endfor %}
+      </div>
     </div>
     {% else %}
     <p>No tienes reportes aún.</p>

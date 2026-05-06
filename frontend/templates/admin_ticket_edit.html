@@ -19,7 +19,7 @@
     <section class="card">
       <h2>Detalle</h2>
       <div class="detail-grid">
-        <div><strong>Estado actual:</strong> {{ ticket.status }}</div>
+        <div><strong>Estado actual:</strong> {{ 'Cerrado' if ticket.status == 'resolved' else 'Pendiente' }}</div>
         <div><strong>Categoría:</strong> {{ ticket.categoria }}</div>
         <div><strong>Urgencia (IA):</strong> {{ ticket.prediccion_urgencia or 'N/A' }}</div>
         <div><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</div>
@@ -85,7 +85,7 @@
     align-items: center;
     gap: 1rem;
     padding: 2rem 2.25rem;
-    background: linear-gradient(135deg, #001f5b 0%, #0a3f95 45%, #1348c1 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 45%, rgba(93, 202, 165, 1) 100%);
     color: white;
     border-radius: 24px;
     min-height: 120px;
