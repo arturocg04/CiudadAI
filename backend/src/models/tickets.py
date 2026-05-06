@@ -165,6 +165,7 @@ class TicketSummary(BaseModel):
     fecha: datetime
     ubicacion_incidencia: str
     description: str
+    admin_notes: str | None = None
 
 
 class TicketDashboardStats(BaseModel):

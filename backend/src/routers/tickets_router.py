@@ -188,3 +188,25 @@ async def review_ticket(
             detail=f"Ticket #{ticket_id} no encontrado.",
         )
     return record
+
+
+@tickets_router.delete(
+    "/{ticket_id}",
+    status_code=status.HTTP_200_OK,
+    responses=COMMON_ERROR_RESPONSES,
+    summary="Eliminar un ticket (admin)",
+)
+async def delete_ticket(
+    ticket_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(require_admin),
+) -> dict:
+    """Permite al admin eliminar un ticket."""
+
+    deleted = await ticket_service.delete_ticket(db, ticket_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ticket #{ticket_id} no encontrado.",
+        )
+    return {"message": "Ticket eliminado."}
