@@ -64,6 +64,28 @@ async def citizen_list_my_tickets(
     return await ticket_service.get_tickets_for_user(db, user.id)
 
 
+@citizen_router.delete(
+    "/tickets/{ticket_id}",
+    status_code=status.HTTP_200_OK,
+    responses=COMMON_ERROR_RESPONSES,
+    summary="Eliminar un ticket propio",
+)
+async def citizen_delete_ticket(
+    ticket_id: int,
+    user: CurrentUser = Depends(get_current_registered_user_dep),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Permite al usuario eliminar uno de sus propios tickets."""
+
+    deleted = await ticket_service.delete_ticket_for_user(db, ticket_id, user.id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ticket #{ticket_id} no encontrado.",
+        )
+    return {"message": "Ticket eliminado."}
+
+
 @citizen_router.get(
     "/dashboard",
     status_code=status.HTTP_200_OK,

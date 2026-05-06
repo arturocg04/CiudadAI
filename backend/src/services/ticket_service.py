@@ -11,9 +11,9 @@ objetos de dominio definidos en src/models/tickets.py.
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.ml_client import call_ml_predict
@@ -87,6 +87,7 @@ def _orm_to_summary(row: TicketORM) -> TicketSummary:
         prediccion_categoria=TicketCategory(row.prediccion_categoria)
         if row.prediccion_categoria
         else None,
+        admin_notes=row.admin_notes,
     )
 
 
@@ -170,6 +171,20 @@ async def get_ticket(
     return _orm_to_record(row) if row else None
 
 
+async def _purge_expired_closed_tickets(db: AsyncSession) -> None:
+    """Elimina tickets cerrados que llevan más de 30 días sin actividad."""
+
+    threshold = datetime.now(UTC) - timedelta(days=30)
+    await db.execute(
+        delete(TicketORM).where(
+            TicketORM.status == str(TicketStatus.resolved),
+            TicketORM.reviewed_at.isnot(None),
+            TicketORM.reviewed_at < threshold,
+        )
+    )
+    await db.commit()
+
+
 async def list_tickets(
     db: AsyncSession,
     status_filter: TicketStatus | None = None,
@@ -178,14 +193,16 @@ async def list_tickets(
 ) -> list[TicketSummary]:
     """Lista tickets con paginación y filtro opcional de estado."""
 
-    query = (
-        select(TicketORM)
-        .order_by(TicketORM.prediccion_urgencia.desc().nulls_last(), TicketORM.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-    )
+    await _purge_expired_closed_tickets(db)
+
+    query = select(TicketORM)
     if status_filter is not None:
         query = query.where(TicketORM.status == str(status_filter))
+
+    query = query.order_by(
+        TicketORM.prediccion_urgencia.desc(),
+        TicketORM.created_at.asc(),
+    ).offset(skip).limit(limit)
 
     result = await db.execute(query)
     rows = result.scalars().all()
@@ -349,11 +366,34 @@ async def create_ticket_for_user(
     return record
 
 
+async def delete_ticket(db: AsyncSession, ticket_id: int) -> bool:
+    """Elimina un ticket por su identificador."""
+
+    result = await db.execute(delete(TicketORM).where(TicketORM.id == ticket_id))
+    await db.commit()
+    return result.rowcount == 1
+
+
+async def delete_ticket_for_user(db: AsyncSession, ticket_id: int, user_id: int) -> bool:
+    """Elimina un ticket solo si pertenece al usuario autenticado."""
+
+    result = await db.execute(
+        delete(TicketORM).where(
+            TicketORM.id == ticket_id,
+            TicketORM.user_id == user_id,
+        )
+    )
+    await db.commit()
+    return result.rowcount == 1
+
+
 async def get_tickets_for_user(
     db: AsyncSession,
     user_id: int,
 ) -> list[TicketSummary]:
     """Obtiene los tickets de un usuario."""
+
+    await _purge_expired_closed_tickets(db)
 
     query = select(TicketORM).where(TicketORM.user_id == user_id).order_by(TicketORM.created_at.desc())
     result = await db.execute(query)
