@@ -66,6 +66,7 @@
       </thead>
       <tbody>
         {% for ticket in admin_tickets %}
+          {% if ticket.status != 'resolved' %}
         <tr>
           <td>{{ ticket.id }}</td>
           <td>{{ ticket.category }}</td>
@@ -79,6 +80,7 @@
             <button type="button" class="icon-delete icon-delete-sm delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
           </td>
         </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>

@@ -49,6 +49,7 @@
       <div id="pending-tickets" class="tab-content active">
         <div class="tickets-list">
         {% for ticket in citizen_tickets %}
+          {% if ticket.status != 'resolved' %}
       <div class="ticket-item" data-ticket-id="{{ ticket.id }}">
         <div class="ticket-header">
           <div class="ticket-header-left">
@@ -80,6 +81,7 @@
           {% endif %}
         </div>
       </div>
+          {% endif %}
       {% endfor %}
       </div>
     </div>
