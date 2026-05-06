@@ -62,7 +62,9 @@
           <p><strong>Descripción:</strong> {{ ticket.description }}</p>
           <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
           {% if ticket.admin_notes %}
+          <div class="admin-reply">
           <p><strong>Respuesta admin:</strong> {{ ticket.admin_notes }}</p>
+          </div>
           {% endif %}
         </div>
       </div>
