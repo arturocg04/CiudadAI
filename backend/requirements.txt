@@ -16,3 +16,5 @@ bcrypt==4.3.0
 
 # Cliente HTTP para el servicio ML
 httpx==0.28.1
+import nltk
+nltk.download('punkt')
