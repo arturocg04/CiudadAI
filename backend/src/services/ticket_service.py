@@ -438,7 +438,11 @@ async def get_tickets_for_user_with_admin_notes(
 ) -> list[TicketCitizenView]:
     """Obtiene los tickets de un usuario con notas del administrador."""
 
-    query = select(TicketORM).where(TicketORM.user_id == user_id).order_by(TicketORM.created_at.desc())
+    query = (
+        select(TicketORM)
+        .where(TicketORM.user_id == user_id)
+        .order_by(TicketORM.created_at.desc())
+    )
     result = await db.execute(query)
     rows = result.scalars().all()
     return [_orm_to_citizen_view(row) for row in rows]
