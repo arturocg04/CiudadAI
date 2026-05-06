@@ -40,9 +40,14 @@
 
   <div class="tickets-panel card">
     <h2>Mis reportes</h2>
+    <div class="status-toggle">
+      <button class="button toggle active" onclick="showTab('pending')">Pendientes</button>
+      <button class="button toggle secondary" onclick="showTab('resolved')">Cerrados</button>
+    </div>
     {% if citizen_tickets %}
     <div class="tickets-panel-inner">
-      <div class="tickets-list">
+      <div id="pending-tickets" class="tab-content active">
+        <div class="tickets-list">
         {% for ticket in citizen_tickets %}
       <div class="ticket-item" data-ticket-id="{{ ticket.id }}">
         <div class="ticket-header">
@@ -78,8 +83,48 @@
       {% endfor %}
       </div>
     </div>
+    <div id="resolved-tickets" class="tab-content">
+      <div class="tickets-list">
+        {% for ticket in citizen_tickets %}
+        {% if ticket.status == 'resolved' %}
+        <div class="ticket-item" data-ticket-id="{{ ticket.id }}">
+          <div class="ticket-header">
+            <div class="ticket-header-left">
+              <span class="ticket-id">#{{ ticket.id }}</span>
+              <span class="ticket-status resolved">Resuelto</span>
+            </div>
+            <button type="button" class="icon-delete small delete-ticket-btn" title="Eliminar ticket" data-ticket-id="{{ ticket.id }}">×</button>
+          </div>
+          <div class="ticket-content">
+            <p><strong>Categoría:</strong> {{ (ticket.categoria or ticket.category) | replace('_', ' ') | title }}</p>
+            <p><strong>Fecha:</strong> {{ ticket.fecha }}</p>
+            <p><strong>Descripción:</strong> {{ ticket.description }}</p>
+            <p><strong>Ubicación:</strong> {{ ticket.ubicacion_incidencia }}</p>
+            {% if ticket.admin_notes %}
+            <div class="admin-response">
+              <div class="admin-response-header">
+                <span class="admin-response-label">Respuesta del administrador</span>
+                {% if ticket.reviewed_by %}
+                <span class="admin-response-meta">por {{ ticket.reviewed_by }}</span>
+                {% endif %}
+                {% if ticket.reviewed_at %}
+                <span class="admin-response-meta">{{ ticket.reviewed_at | default('') }}</span>
+                {% endif %}
+              </div>
+              <div class="admin-response-content">{{ ticket.admin_notes }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% if not citizen_tickets or citizen_tickets | selectattr('status') | list | length == 0 %}
+      <p>No tienes reportes resueltos.</p>
+      {% endif %}
+    </div>
     {% else %}
-    <p>No tienes reportes aún.</p>
+      <p>No tienes reportes aún.</p>
     {% endif %}
   </div>
 </div>
@@ -175,6 +220,42 @@
     color: #374151;
     font-weight: 600;
   }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .status-toggle {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1rem 0 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .status-toggle .button.toggle {
+    background: #ffffff;
+    border: 1px solid rgba(15, 110, 86, 0.16);
+    color: var(--primary);
+    padding: 10px 18px;
+    min-height: auto;
+    border-radius: 999px;
+    text-transform: none;
+    font-weight: 700;
+  }
+
+  .status-toggle .button.toggle.secondary {
+    color: var(--text);
+  }
+
+  .status-toggle .button.toggle.active {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 14px 30px rgba(15, 110, 86, 0.18);
+  }
 </style>
 
 <script>
@@ -204,10 +285,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ticketElement.remove();
           }
           
-          // Check if there are no more tickets
-          const ticketsList = document.querySelector('.tickets-list');
+          // Check if there are no more tickets in current tab
+          const activeTab = document.querySelector('.tab-content.active');
+          const ticketsList = activeTab.querySelector('.tickets-list');
           if (ticketsList && ticketsList.children.length === 0) {
-            ticketsList.innerHTML = '<p>No tienes reportes aún.</p>';
+            ticketsList.innerHTML = '<p>No tienes reportes en esta categoría.</p>';
           }
         } else {
           alert('Error al eliminar el ticket. Por favor, inténtalo de nuevo.');
@@ -219,5 +301,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+function showTab(tabName) {
+  // Hide all tabs
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+  
+  // Hide all buttons
+  const buttons = document.querySelectorAll('.status-toggle button');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + '-tickets');
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+  
+  // Highlight selected button
+  const selectedButton = document.querySelector(`.status-toggle button:nth-child(${tabName === 'pending' ? '1' : '2'})`);
+  if (selectedButton) {
+    selectedButton.classList.add('active');
+  }
+}
+</script>
 </script>
 {% endblock %}
