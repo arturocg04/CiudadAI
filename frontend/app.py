@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from config import settings
+
 # from routes.auth import router as auth_router  # DEPRECATED: Using pages.py instead
 from routes.pages import router as pages_router
 

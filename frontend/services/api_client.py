@@ -53,7 +53,16 @@ class BackendApiClient:
             response.raise_for_status()
             return TokenResponse(**response.json())
 
-    async def register_user(self, nombre: str, apellidos: str, nif: str, telefono: str, email: str, domicilio: str, password: str) -> dict:
+    async def register_user(
+        self,
+        nombre: str,
+        apellidos: str,
+        nif: str,
+        telefono: str,
+        email: str,
+        domicilio: str,
+        password: str,
+    ) -> dict:
         async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
             response = await client.post(
                 "/api/v1/user/register",

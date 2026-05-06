@@ -257,7 +257,9 @@ async def get_dashboard_stats(db: AsyncSession) -> TicketDashboardStats:
 
     # Nuevos tickets que todavía no han sido abiertos para revisión.
     new_result = await db.execute(
-        select(func.count()).where(TicketORM.status == str(TicketStatus.pending_classification))
+        select(func.count()).where(
+            TicketORM.status == str(TicketStatus.pending_classification)
+        )
     )
     new_tickets = new_result.scalar_one()
 

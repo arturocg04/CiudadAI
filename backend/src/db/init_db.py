@@ -23,11 +23,11 @@ async def _create_default_admin() -> None:
             select(UserORM).where(UserORM.email == "admin@example.com")
         )
         existing_admin = result.scalar_one_or_none()
-        
+
         if existing_admin:
             logger.info("Usuario admin ya existe: admin@example.com")
             return
-        
+
         # Crear admin por defecto
         password_hash = bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode()
         admin_user = UserORM(
@@ -38,9 +38,9 @@ async def _create_default_admin() -> None:
             email="admin@example.com",
             domicilio="Sistema",
             password_hash=password_hash,
-            role="admin"
+            role="admin",
         )
-        
+
         session.add(admin_user)
         await session.commit()
         logger.info("✓ Usuario admin creado: admin@example.com / admin123")
@@ -59,9 +59,11 @@ async def init_db() -> None:
             text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS user_id INTEGER")
         )
         await conn.execute(
-            text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS anon_fingerprint VARCHAR(128)")
+            text(
+                "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS anon_fingerprint VARCHAR(128)"
+            )
         )
     logger.info("Esquema de base de datos listo.")
-    
+
     # Crear admin por defecto
     await _create_default_admin()

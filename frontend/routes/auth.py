@@ -8,7 +8,9 @@ from httpx import HTTPStatusError, RequestError
 from services.api_client import api_client
 
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent.parent / "templates")
+)
 
 
 @router.get("/login")
@@ -43,14 +45,17 @@ async def login_submit(
     except (HTTPStatusError, RequestError):
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "No se pudo obtener la información del usuario."},
+            {
+                "request": request,
+                "error": "No se pudo obtener la información del usuario.",
+            },
             status_code=503,
         )
 
     request.session["access_token"] = token_response.access_token
     request.session["role"] = user.role
     request.session["username"] = user.username
-    
+
     # Redirigir según el rol del usuario
     if user.role == "admin":
         return RedirectResponse(url="/admin/dashboard", status_code=303)

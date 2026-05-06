@@ -35,7 +35,9 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
         raise ValueError("El teléfono ya está registrado.")
 
     # Hash de la contraseña
-    hashed_password = bcrypt.hashpw(user_data.password.encode(), bcrypt.gensalt()).decode()
+    hashed_password = bcrypt.hashpw(
+        user_data.password.encode(), bcrypt.gensalt()
+    ).decode()
 
     # Crear usuario
     new_user = UserORM(
@@ -56,11 +58,11 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
 
 async def authenticate_user(db: AsyncSession, login_data: UserLogin) -> UserORM | None:
     """Autentica un usuario por email y contraseña."""
-    result = await db.execute(
-        select(UserORM).filter(UserORM.email == login_data.email)
-    )
+    result = await db.execute(select(UserORM).filter(UserORM.email == login_data.email))
     user = result.scalar()
-    if user and bcrypt.checkpw(login_data.password.encode(), user.password_hash.encode()):
+    if user and bcrypt.checkpw(
+        login_data.password.encode(), user.password_hash.encode()
+    ):
         return user
     return None
 
@@ -73,14 +75,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now(UTC) + timedelta(minutes=30)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
     return encoded_jwt
 
 
-async def get_current_user_from_token(db: AsyncSession, token: str) -> CurrentUser | None:
+async def get_current_user_from_token(
+    db: AsyncSession, token: str
+) -> CurrentUser | None:
     """Decodifica el token y obtiene el usuario actual."""
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+        )
         email: str = payload.get("sub")
         if email is None:
             return None

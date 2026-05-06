@@ -39,7 +39,9 @@ async def test_init_db_rebuilds_schema_when_columns_drift(tmp_path: Path, monkey
     async with engine.begin() as conn:
         assert await conn.run_sync(db_init._schema_matches) is True
         inspector = inspect(conn)
-        assert "legacy_flag" not in {column["name"] for column in inspector.get_columns("users")}
+        assert "legacy_flag" not in {
+            column["name"] for column in inspector.get_columns("users")
+        }
 
     async with session_factory() as session:
         result = await session.execute(

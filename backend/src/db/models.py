@@ -21,7 +21,9 @@ class UserORM(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True)
     domicilio: Mapped[str] = mapped_column(String(255))
     password_hash: Mapped[str] = mapped_column(String(128))
-    role: Mapped[str] = mapped_column(String(20), default="citizen")  # "citizen" or "admin"
+    role: Mapped[str] = mapped_column(
+        String(20), default="citizen"
+    )  # "citizen" or "admin"
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

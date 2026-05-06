@@ -36,7 +36,9 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
     return CurrentUser(id=payload.get("id"), username=username, role=role)
 
 
-async def get_current_registered_user_dep(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)) -> CurrentUser:
+async def get_current_registered_user_dep(
+    db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
+) -> CurrentUser:
     """Obtiene el usuario registrado autenticado."""
     user = await get_current_registered_user(db, token)
     if user is None:
@@ -67,4 +69,9 @@ def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
 
 # Re-exportar get_db para que los routers puedan importarlo desde deps sin
 # conocer la ubicación interna del módulo de base de datos.
-__all__ = ["get_current_user", "get_current_registered_user_dep", "require_admin", "get_db"]
+__all__ = [
+    "get_current_user",
+    "get_current_registered_user_dep",
+    "require_admin",
+    "get_db",
+]

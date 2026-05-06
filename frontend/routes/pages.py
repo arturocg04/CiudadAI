@@ -9,7 +9,9 @@ from httpx import HTTPStatusError, RequestError
 from services.api_client import api_client
 
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent.parent / "templates")
+)
 
 
 def _format_datetime(value: str | datetime | None) -> str | None:
@@ -98,17 +100,33 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         return RedirectResponse(url="/citizen/dashboard", status_code=303)
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
-        return templates.TemplateResponse("home.html", {"request": request, "error": error_msg})
+        return templates.TemplateResponse(
+            "home.html", {"request": request, "error": error_msg}
+        )
     except Exception as exc:
         import logging
+
         logging.exception(f"Error no controlado en login: {exc}")
-        return templates.TemplateResponse("home.html", {"request": request, "error": f"Error interno: {str(exc)}"})
+        return templates.TemplateResponse(
+            "home.html", {"request": request, "error": f"Error interno: {str(exc)}"}
+        )
 
 
 @router.post("/auth/register")
-async def register(request: Request, nombre: str = Form(...), apellidos: str = Form(...), nif: str = Form(...), telefono: str = Form(...), email: str = Form(...), domicilio: str = Form(...), password: str = Form(...)):
+async def register(
+    request: Request,
+    nombre: str = Form(...),
+    apellidos: str = Form(...),
+    nif: str = Form(...),
+    telefono: str = Form(...),
+    email: str = Form(...),
+    domicilio: str = Form(...),
+    password: str = Form(...),
+):
     try:
-        await api_client.register_user(nombre, apellidos, nif, telefono, email, domicilio, password)
+        await api_client.register_user(
+            nombre, apellidos, nif, telefono, email, domicilio, password
+        )
         # Auto-login después de registro
         token_response = await api_client.login_user(email, password)
         request.session["access_token"] = token_response.access_token
@@ -116,15 +134,22 @@ async def register(request: Request, nombre: str = Form(...), apellidos: str = F
         return RedirectResponse(url="/citizen/dashboard", status_code=303)
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Error al crear cuenta")
-        return templates.TemplateResponse("register.html", {"request": request, "error": error_msg})
+        return templates.TemplateResponse(
+            "register.html", {"request": request, "error": error_msg}
+        )
     except Exception as exc:
         import logging
+
         logging.exception(f"Error en registro: {exc}")
-        return templates.TemplateResponse("register.html", {"request": request, "error": f"Error interno: {str(exc)}"})
+        return templates.TemplateResponse(
+            "register.html", {"request": request, "error": f"Error interno: {str(exc)}"}
+        )
 
 
 @router.post("/auth/admin/login")
-async def admin_login(request: Request, username: str = Form(...), password: str = Form(...)):
+async def admin_login(
+    request: Request, username: str = Form(...), password: str = Form(...)
+):
     try:
         token_response = await api_client.login_user(username, password)
         current_user = await api_client.me(token_response.access_token)
@@ -136,9 +161,13 @@ async def admin_login(request: Request, username: str = Form(...), password: str
         return RedirectResponse(url="/admin/dashboard", status_code=303)
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
-        return templates.TemplateResponse("admin_login.html", {"request": request, "error": error_msg})
+        return templates.TemplateResponse(
+            "admin_login.html", {"request": request, "error": error_msg}
+        )
     except HTTPException as exc:
-        return templates.TemplateResponse("admin_login.html", {"request": request, "error": str(exc.detail)})
+        return templates.TemplateResponse(
+            "admin_login.html", {"request": request, "error": str(exc.detail)}
+        )
 
 
 @router.post("/logout")
@@ -181,19 +210,23 @@ async def dashboard(request: Request):
 
 # ============ RUTAS ADMIN ============
 
+
 @router.get("/admin/dashboard")
 async def admin_dashboard(request: Request):
     token = request.session.get("access_token")
     role = request.session.get("role")
-    
+
     if not token or role != "admin":
         return RedirectResponse(url="/admin/login", status_code=303)
-    
+
     try:
         current_user = await api_client.me(token)
         # Llamar al endpoint de admin
         import httpx
-        async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
+
+        async with httpx.AsyncClient(
+            base_url=api_client.base_url, timeout=10.0
+        ) as client:
             dashboard_response = await client.get(
                 "/api/v1/admin/dashboard",
                 headers={"Authorization": f"Bearer {token}"},
@@ -222,7 +255,7 @@ async def admin_dashboard(request: Request):
     except (HTTPStatusError, RequestError):
         request.session.clear()
         return RedirectResponse(url="/admin/login", status_code=303)
-    
+
     context = {
         "request": request,
         "current_user": current_user,
@@ -242,7 +275,10 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
 
     try:
         import httpx
-        async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
+
+        async with httpx.AsyncClient(
+            base_url=api_client.base_url, timeout=10.0
+        ) as client:
             ticket_response = await client.get(
                 f"/api/v1/admin/tickets/{ticket_id}",
                 headers={"Authorization": f"Bearer {token}"},
@@ -263,7 +299,11 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
             spec_response = await client.get("/api/v1/tickets/spec")
             spec_response.raise_for_status()
             spec = spec_response.json()
-            statuses = [s for s in (spec.get("statuses") or []) if s in ["pending_review", "resolved"]]
+            statuses = [
+                s
+                for s in (spec.get("statuses") or [])
+                if s in ["pending_review", "resolved"]
+            ]
     except HTTPStatusError as exc:
         if exc.response is not None and exc.response.status_code in (401, 403):
             request.session.clear()
@@ -304,7 +344,10 @@ async def admin_ticket_review_submit(
 
     try:
         import httpx
-        async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
+
+        async with httpx.AsyncClient(
+            base_url=api_client.base_url, timeout=10.0
+        ) as client:
             response = await client.patch(
                 f"/api/v1/admin/tickets/{ticket_id}/review",
                 headers={"Authorization": f"Bearer {token}"},
@@ -328,7 +371,10 @@ async def admin_ticket_review_submit(
         # Re-render la pantalla con el error
         try:
             import httpx
-            async with httpx.AsyncClient(base_url=api_client.base_url, timeout=10.0) as client:
+
+            async with httpx.AsyncClient(
+                base_url=api_client.base_url, timeout=10.0
+            ) as client:
                 ticket_response = await client.get(
                     f"/api/v1/admin/tickets/{ticket_id}",
                     headers={"Authorization": f"Bearer {token}"},
@@ -339,7 +385,11 @@ async def admin_ticket_review_submit(
                     ticket["fecha"] = _format_datetime(ticket["fecha"])
                 spec_response = await client.get("/api/v1/tickets/spec")
                 spec_response.raise_for_status()
-                statuses = [s for s in (spec_response.json().get("statuses") or []) if s in ["pending_review", "resolved"]]
+                statuses = [
+                    s
+                    for s in (spec_response.json().get("statuses") or [])
+                    if s in ["pending_review", "resolved"]
+                ]
         except Exception:
             return RedirectResponse(url="/admin/dashboard", status_code=303)
 
@@ -404,7 +454,11 @@ async def citizen_report_submit(
             pass
         return templates.TemplateResponse(
             "citizen_dashboard.html",
-            {"request": request, "citizen_tickets": citizen_tickets, "form_error": error_detail},
+            {
+                "request": request,
+                "citizen_tickets": citizen_tickets,
+                "form_error": error_detail,
+            },
         )
     except RequestError:
         return templates.TemplateResponse(
@@ -426,6 +480,7 @@ async def citizen_report_submit(
 
 
 # ============ RUTAS CIUDADANO ============
+
 
 @router.get("/citizen/dashboard")
 async def citizen_dashboard(request: Request):

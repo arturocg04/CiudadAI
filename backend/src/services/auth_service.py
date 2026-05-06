@@ -40,7 +40,9 @@ def _build_users_db_from_settings() -> None:
             username = "api_user"
             pwd = "change_me"
         else:
-            logging.getLogger(__name__).debug("No demo mock auth configured via settings.")
+            logging.getLogger(__name__).debug(
+                "No demo mock auth configured via settings."
+            )
             return
     else:
         username = settings.mock_auth_username
@@ -95,14 +97,16 @@ def authenticate_demo_user(username: str, password: str) -> dict | None:
     if username not in USERS_DB:
         logger.warning("Intento de login fallido: usuario '%s' no existe.", username)
         return None
-    
+
     user_info = USERS_DB[username]
     if not bcrypt.checkpw(password.encode(), user_info["hashed_password"].encode()):
         logger.warning("Contraseña incorrecta para el empleado: %s", username)
         return None
-    
+
     # Generar token con sub=username y role=admin
-    token = create_access_token({"sub": user_info["username"], "role": user_info["role"]})
+    token = create_access_token(
+        {"sub": user_info["username"], "role": user_info["role"]}
+    )
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -113,7 +117,9 @@ def authenticate_demo_user(username: str, password: str) -> dict | None:
 # ==================== AUTENTICACIÓN USUARIOS REGISTRADOS ====================
 
 
-async def authenticate_registered_user(db: AsyncSession, email: str, password: str) -> UserORM | None:
+async def authenticate_registered_user(
+    db: AsyncSession, email: str, password: str
+) -> UserORM | None:
     """Autentica usuarios registrados por email."""
     result = await db.execute(select(UserORM).filter(UserORM.email == email))
     user = result.scalar()
@@ -127,11 +133,11 @@ async def get_current_registered_user(db: AsyncSession, token: str) -> UserORM |
     payload = decode_access_token(token)
     if payload is None:
         return None
-    
+
     email: str = payload.get("sub")
     if email is None:
         return None
-    
+
     result = await db.execute(select(UserORM).filter(UserORM.email == email))
     return result.scalar()
 

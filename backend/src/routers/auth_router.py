@@ -86,11 +86,17 @@ async def read_current_user(
     # Si no es usuario registrado, usar el método original
     payload = decode_access_token(token)
     if payload is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o caducado.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o caducado.",
+        )
 
     username = payload.get("sub")
     role = payload.get("role", "citizen")
     if username is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido: falta el identificador de usuario.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido: falta el identificador de usuario.",
+        )
 
     return CurrentUser(id=payload.get("id"), username=username, role=role)

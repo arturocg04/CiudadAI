@@ -20,7 +20,9 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         user = await register_user(db, user_data)
         access_token = create_access_token(data={"sub": user.email, "role": "citizen"})
-        return TokenResponse(access_token=access_token, token_type="bearer", expires_in=1800)
+        return TokenResponse(
+            access_token=access_token, token_type="bearer", expires_in=1800
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -32,4 +34,6 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     access_token = create_access_token(data={"sub": user.email, "role": user.role})
-    return TokenResponse(access_token=access_token, token_type="bearer", expires_in=1800)
+    return TokenResponse(
+        access_token=access_token, token_type="bearer", expires_in=1800
+    )

@@ -38,7 +38,11 @@ def _train_model() -> None:
         raise FileNotFoundError(f"Dataset no encontrado en {DATA_PATH}")
 
     df = pd.read_csv(DATA_PATH)
-    if "description" not in df.columns or "categoria" not in df.columns or "urgencia" not in df.columns:
+    if (
+        "description" not in df.columns
+        or "categoria" not in df.columns
+        or "urgencia" not in df.columns
+    ):
         raise ValueError("El dataset no contiene las columnas requeridas.")
 
     df["description"] = df["description"].fillna("")
@@ -47,7 +51,9 @@ def _train_model() -> None:
     tfidf = TfidfVectorizer(max_features=1000, stop_words="english", ngram_range=(1, 2))
     X_text = tfidf.fit_transform(df["description"]).toarray()
 
-    X_cat_encoded_df = pd.get_dummies(df[["categoria"]], columns=["categoria"], drop_first=True)
+    X_cat_encoded_df = pd.get_dummies(
+        df[["categoria"]], columns=["categoria"], drop_first=True
+    )
     expected_cat_cols = list(X_cat_encoded_df.columns)
     X_cat = X_cat_encoded_df.values
 
@@ -87,7 +93,9 @@ def predict(payload: PredictInput) -> PredictOutput:
 
     cat_df = pd.DataFrame({"categoria": [categoria_modelo]})
     cat_encoded_full = pd.get_dummies(cat_df, columns=["categoria"], drop_first=True)
-    cat_encoded = cat_encoded_full.reindex(columns=_expected_cat_cols, fill_value=0).values
+    cat_encoded = cat_encoded_full.reindex(
+        columns=_expected_cat_cols, fill_value=0
+    ).values
 
     X_new = np.hstack((text_tf, cat_encoded))
 
