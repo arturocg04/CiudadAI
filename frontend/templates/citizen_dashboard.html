@@ -46,10 +46,15 @@
         {% for ticket in citizen_tickets %}
       <div class="ticket-item">
         <div class="ticket-header">
-          <span class="ticket-id">#{{ ticket.id }}</span>
-          <span class="ticket-status {{ 'pending' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'resolved' }}">
-            {{ 'Pendiente' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'Resuelto' }}
-          </span>
+          <div class="ticket-header-left">
+            <span class="ticket-id">#{{ ticket.id }}</span>
+            <span class="ticket-status {{ 'pending' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'resolved' }}">
+              {{ 'Pendiente' if ticket.status == 'pending_classification' or ticket.status == 'pending_review' else 'Resuelto' }}
+            </span>
+          </div>
+          <form method="post" action="/citizen/tickets/{{ ticket.id }}/delete" class="ticket-delete-form">
+            <button type="submit" class="icon-delete small" title="Eliminar ticket">×</button>
+          </form>
         </div>
         <div class="ticket-content">
           <p><strong>Categoría:</strong> {{ (ticket.categoria or ticket.category) | replace('_', ' ') | title }}</p>

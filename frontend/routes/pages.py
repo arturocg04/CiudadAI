@@ -212,12 +212,15 @@ async def dashboard(request: Request):
 
 
 @router.get("/admin/dashboard")
-async def admin_dashboard(request: Request):
+async def admin_dashboard(request: Request, status: str | None = None):
     token = request.session.get("access_token")
     role = request.session.get("role")
 
     if not token or role != "admin":
         return RedirectResponse(url="/admin/login", status_code=303)
+
+    valid_statuses = {"pending_review", "resolved"}
+    status_filter = status if status in valid_statuses else "pending_review"
 
     try:
         current_user = await api_client.me(token)
@@ -242,7 +245,6 @@ async def admin_dashboard(request: Request):
             admin_stats = stats_response.json()
 
             tickets_response = await client.get(
-                # Listar todos los tickets creados (sin filtrar por estado)
                 "/api/v1/tickets",
                 headers={"Authorization": f"Bearer {token}"},
                 params={"limit": 100},
@@ -262,8 +264,27 @@ async def admin_dashboard(request: Request):
         "admin_data": admin_data,
         "admin_stats": admin_stats,
         "admin_tickets": admin_tickets,
+        "selected_status": status_filter,
     }
     return templates.TemplateResponse("admin_dashboard.html", context)
+
+
+@router.post("/admin/tickets/{ticket_id}/delete")
+async def admin_ticket_delete(request: Request, ticket_id: int, status: str | None = None):
+    token = request.session.get("access_token")
+    role = request.session.get("role")
+    if not token or role != "admin":
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    try:
+        await api_client.delete_ticket(token, ticket_id)
+    except (HTTPStatusError, RequestError):
+        pass
+
+    redirect_url = "/admin/dashboard"
+    if status:
+        redirect_url += f"?status={status}"
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @router.get("/admin/tickets/{ticket_id}")
@@ -507,3 +528,17 @@ async def citizen_dashboard(request: Request):
         "citizen_tickets": citizen_tickets,
     }
     return templates.TemplateResponse("citizen_dashboard.html", context)
+
+
+@router.post("/citizen/tickets/{ticket_id}/delete")
+async def citizen_ticket_delete(request: Request, ticket_id: int):
+    token = request.session.get("access_token")
+    if not token:
+        return RedirectResponse(url="/", status_code=303)
+
+    try:
+        await api_client.delete_user_ticket(token, ticket_id)
+    except (HTTPStatusError, RequestError):
+        pass
+
+    return RedirectResponse(url="/citizen/dashboard", status_code=303)
