@@ -3,7 +3,6 @@
 Propósito: definir la estructura de datos para trabajadores/personal de la plataforma.
 """
 
-
 from pydantic import BaseModel, EmailStr, Field
 
 

@@ -258,7 +258,9 @@ async def admin_dashboard(request: Request, status: str | None = None):
 
 
 @router.post("/admin/tickets/{ticket_id}/delete")
-async def admin_ticket_delete(request: Request, ticket_id: int, status: str | None = None):
+async def admin_ticket_delete(
+    request: Request, ticket_id: int, status: str | None = None
+):
     token = request.session.get("access_token")
     role = request.session.get("role")
     if not token or role != "admin":

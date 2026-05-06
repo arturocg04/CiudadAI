@@ -198,10 +198,14 @@ async def list_tickets(
     if status_filter is not None:
         query = query.where(TicketORM.status == str(status_filter))
 
-    query = query.order_by(
-        TicketORM.prediccion_urgencia.desc(),
-        TicketORM.created_at.asc(),
-    ).offset(skip).limit(limit)
+    query = (
+        query.order_by(
+            TicketORM.prediccion_urgencia.desc(),
+            TicketORM.created_at.asc(),
+        )
+        .offset(skip)
+        .limit(limit)
+    )
 
     result = await db.execute(query)
     rows = result.scalars().all()
@@ -373,7 +377,9 @@ async def delete_ticket(db: AsyncSession, ticket_id: int) -> bool:
     return result.rowcount == 1
 
 
-async def delete_ticket_for_user(db: AsyncSession, ticket_id: int, user_id: int) -> bool:
+async def delete_ticket_for_user(
+    db: AsyncSession, ticket_id: int, user_id: int
+) -> bool:
     """Elimina un ticket solo si pertenece al usuario autenticado."""
 
     result = await db.execute(
@@ -394,7 +400,11 @@ async def get_tickets_for_user(
 
     await _purge_expired_closed_tickets(db)
 
-    query = select(TicketORM).where(TicketORM.user_id == user_id).order_by(TicketORM.created_at.desc())
+    query = (
+        select(TicketORM)
+        .where(TicketORM.user_id == user_id)
+        .order_by(TicketORM.created_at.desc())
+    )
     result = await db.execute(query)
     rows = result.scalars().all()
     return [_orm_to_summary(row) for row in rows]

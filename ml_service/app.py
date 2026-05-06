@@ -54,7 +54,11 @@ def _train_model() -> None:
         raise FileNotFoundError(f"Dataset no encontrado en {DATA_PATH}")
 
     df = pd.read_csv(DATA_PATH)
-    if "description" not in df.columns or "categoria" not in df.columns or "urgencia" not in df.columns:
+    if (
+        "description" not in df.columns
+        or "categoria" not in df.columns
+        or "urgencia" not in df.columns
+    ):
         raise ValueError("El dataset no contiene las columnas requeridas.")
 
     df = df.dropna(subset=["description", "categoria", "urgencia"]).copy()
@@ -64,7 +68,9 @@ def _train_model() -> None:
     y = df["urgencia"].astype(float)
 
     stop_words_spanish = _ensure_stopwords()
-    tfidf = TfidfVectorizer(max_features=1000, stop_words=stop_words_spanish, ngram_range=(1, 2))
+    tfidf = TfidfVectorizer(
+        max_features=1000, stop_words=stop_words_spanish, ngram_range=(1, 2)
+    )
     X_text_tfidf = tfidf.fit_transform(X_text).toarray()
 
     X_cat_encoded_df = pd.get_dummies(X_cat, columns=["categoria"], drop_first=True)
@@ -103,7 +109,9 @@ def _train_model() -> None:
         metrics=["mae"],
     )
 
-    early_stop = EarlyStopping(monitor="val_loss", patience=15, restore_best_weights=True, verbose=0)
+    early_stop = EarlyStopping(
+        monitor="val_loss", patience=15, restore_best_weights=True, verbose=0
+    )
     nn_model.fit(
         X_train_scaled,
         y_train_normalized,
@@ -134,7 +142,12 @@ def health() -> dict:
 
 @app.post("/predict", response_model=PredictOutput)
 def predict(payload: PredictInput) -> PredictOutput:
-    if _model is None or _tfidf is None or _expected_cat_cols is None or _scaler is None:
+    if (
+        _model is None
+        or _tfidf is None
+        or _expected_cat_cols is None
+        or _scaler is None
+    ):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     description = payload.description
@@ -145,7 +158,9 @@ def predict(payload: PredictInput) -> PredictOutput:
 
     cat_df = pd.DataFrame({"categoria": [categoria_modelo]})
     cat_encoded_full = pd.get_dummies(cat_df, columns=["categoria"], drop_first=True)
-    cat_encoded = cat_encoded_full.reindex(columns=_expected_cat_cols, fill_value=0).values
+    cat_encoded = cat_encoded_full.reindex(
+        columns=_expected_cat_cols, fill_value=0
+    ).values
 
     X_new = np.hstack((text_tf, cat_encoded))
     X_new_scaled = _scaler.transform(X_new)
