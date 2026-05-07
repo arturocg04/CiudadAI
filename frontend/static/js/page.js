@@ -150,65 +150,195 @@
   // 5. BUTTON INTERACTIONS
   // =====================================================
 
-  const initButtonInteractions = () => {
-    const buttons = document.querySelectorAll(
-      'button, .btn, a[class*="btn"], input[type="submit"], input[type="button"]'
-    );
 
-    buttons.forEach((button) => {
-      // Efecto ripple simple (sin librerías externas)
-      button.addEventListener('click', function(e) {
-        if (config.reduceMotion || this.disabled) return;
 
-        const rect = this.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+const initUnifiedButtonAndLinkInteractions = () => {
+  // Selector unificado: botones Y enlaces que parecen botones
+  const interactiveElements = document.querySelectorAll(
+    'button, .btn, a.btn, a[class*="btn"], input[type="submit"], input[type="button"], [role="button"]'
+  );
 
-        const ripple = document.createElement('span');
-        ripple.style.position = 'absolute';
-        ripple.style.left = x + 'px';
-        ripple.style.top = y + 'px';
-        ripple.style.width = '0';
-        ripple.style.height = '0';
-        ripple.style.borderRadius = '50%';
-        ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-        ripple.style.pointerEvents = 'none';
-        ripple.style.animation = 'rippleEffect 0.6s ease-out forwards';
+  interactiveElements.forEach((element) => {
+    // =====================================================
+    // 1. RIPPLE EFFECT (Click visual)
+    // =====================================================
+    element.addEventListener('click', function(e) {
+      if (config.reduceMotion || this.disabled || this.getAttribute('aria-disabled') === 'true') return;
 
-        this.style.position = 'relative';
-        this.style.overflow = 'hidden';
-        this.appendChild(ripple);
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-        setTimeout(() => ripple.remove(), 600);
-      });
+      // Crear elemento ripple
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.position = 'absolute';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      ripple.style.width = '0';
+      ripple.style.height = '0';
+      ripple.style.borderRadius = '50%';
+      ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+      ripple.style.pointerEvents = 'none';
+      ripple.style.animation = 'rippleEffect 0.6s ease-out forwards';
 
-      // Agregar estilos de carga si el botón tiene atributo data-loading
-      if (button.hasAttribute('data-loading')) {
-        button.addEventListener('click', function() {
-          if (!config.reduceMotion) {
-            this.style.pointerEvents = 'none';
-            this.style.opacity = '0.7';
-          }
-        });
-      }
+      this.style.position = 'relative';
+      this.style.overflow = 'hidden';
+      this.appendChild(ripple);
+
+      // Remover después de animación
+      setTimeout(() => ripple.remove(), 600);
     });
 
-    // Agregar animación ripple al CSS dinámicamente si no existe
-    if (!document.querySelector('style[data-page-ripple]')) {
-      const style = document.createElement('style');
-      style.setAttribute('data-page-ripple', 'true');
-      style.textContent = `
-        @keyframes rippleEffect {
-          to {
-            width: 300px;
-            height: 300px;
-            opacity: 0;
+    // =====================================================
+    // 2. EFECTO DEGRADADO TRANSITORIO (Pulse al click)
+    // =====================================================
+    element.addEventListener('click', function(e) {
+      if (config.reduceMotion) return;
+
+      // Agregar clase con animación de pulse
+      this.style.animation = 'none';
+      
+      // Trigger reflow para reiniciar animación
+      void this.offsetWidth;
+      
+      this.style.animation = 'buttonPulse 0.6s ease-out';
+
+      // Remover clase después de animación
+      setTimeout(() => {
+        this.style.animation = 'none';
+      }, 600);
+    });
+
+    // =====================================================
+    // 3. HOVER EFFECT (Elevación)
+    // =====================================================
+    element.addEventListener('mouseenter', function(e) {
+      if (config.reduceMotion || this.disabled) return;
+
+      this.style.transform = 'translateY(-3px)';
+      this.style.boxShadow = '0 8px 24px rgba(31, 117, 94, 0.35)';
+    });
+
+    element.addEventListener('mouseleave', function(e) {
+      if (config.reduceMotion) return;
+
+      this.style.transform = 'translateY(0)';
+      this.style.boxShadow = '0 4px 12px rgba(31, 117, 94, 0.2)';
+    });
+
+    // =====================================================
+    // 4. ACTIVE STATE (Presión)
+    // =====================================================
+    element.addEventListener('mousedown', function(e) {
+      if (config.reduceMotion || this.disabled) return;
+
+      this.style.transform = 'translateY(-1px)';
+      this.style.boxShadow = '0 4px 12px rgba(31, 117, 94, 0.2)';
+    });
+
+    element.addEventListener('mouseup', function(e) {
+      if (config.reduceMotion || this.disabled) return;
+
+      this.style.transform = 'translateY(-3px)';
+      this.style.boxShadow = '0 8px 24px rgba(31, 117, 94, 0.35)';
+    });
+
+    // =====================================================
+    // 5. ESTADO DE CARGA (data-loading)
+    // =====================================================
+    if (element.hasAttribute('data-loading')) {
+      element.addEventListener('click', function() {
+        if (!config.reduceMotion) {
+          this.style.pointerEvents = 'none';
+          this.style.opacity = '0.7';
+          
+          // Guardar texto original
+          this.dataset.originalText = this.textContent;
+          
+          // Mostrar spinner
+          const originalHTML = this.innerHTML;
+          this.innerHTML = '⏳ Procesando...';
+          
+          // Restaurar después de 5 segundos (fallback)
+          setTimeout(() => {
+            this.style.pointerEvents = 'auto';
+            this.style.opacity = '1';
+            this.innerHTML = originalHTML;
+          }, 5000);
+        }
+      });
+    }
+
+    // =====================================================
+    // 6. NAVEGACIÓN SUAVE (Solo para enlaces <a>)
+    // =====================================================
+    if (element.tagName === 'A') {
+      element.addEventListener('click', function(e) {
+        if (config.reduceMotion || this.classList.contains('no-transition')) return;
+
+        const href = this.getAttribute('href');
+        if (!href || href.startsWith('javascript:') || href.startsWith('#')) return;
+
+        // Si es navegación interna
+        if (href.startsWith('/') || !href.includes('://')) {
+          e.preventDefault();
+
+          const main = document.querySelector('main');
+          if (main) {
+            main.style.opacity = '0';
+            main.style.transition = 'opacity 0.3s ease-out';
+
+            setTimeout(() => {
+              window.location.href = href;
+            }, 300);
+          } else {
+            window.location.href = href;
           }
         }
-      `;
-      document.head.appendChild(style);
+      });
     }
-  };
+  });
+
+  // =====================================================
+  // Agregar animaciones CSS si no existen
+  // =====================================================
+  if (!document.querySelector('style[data-unified-effects]')) {
+    const style = document.createElement('style');
+    style.setAttribute('data-unified-effects', 'true');
+    style.textContent = `
+      /* Ripple effect */
+      @keyframes rippleEffect {
+        to {
+          width: 300px;
+          height: 300px;
+          opacity: 0;
+        }
+      }
+
+      /* Button pulse al click */
+      @keyframes buttonPulse {
+        0% {
+          box-shadow: 0 4px 12px rgba(31, 117, 94, 0.2);
+        }
+        50% {
+          box-shadow: 0 8px 24px rgba(31, 117, 94, 0.4);
+        }
+        100% {
+          box-shadow: 0 4px 12px rgba(31, 117, 94, 0.2);
+        }
+      }
+
+      /* Spinner para loading */
+      @keyframes spin {
+        to {
+          transform: rotateZ(360deg);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
 
   // =====================================================
   // 6. LINK TRANSITIONS
@@ -404,8 +534,7 @@
     initContainerFix();           // Fix del main debe ser primero
     initPageAnimations();         // Luego animar elementos
     initFormEnhancements();       // Mejorar formularios
-    initButtonInteractions();     // Interacciones de botones
-    initLinkTransitions();        // Transiciones de links
+    initUnifiedButtonAndLinkInteractions();  // Fusiona las interaccion de link y botones 
     initScrollEffects();          // Efectos al scroll
     initCardStability();          // Estabilidad de tarjetas
     initAccessibility();          // Accesibilidad

@@ -199,7 +199,9 @@ input[type="button"] {
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: rippleEffect 0.6s ease-out forwards;
+  animation: buttonPulse 0.6s ease-out;
 }
 
 button:hover, 
@@ -496,7 +498,6 @@ position: sticky;      /* Mantiene la cabecera fija arriba */
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);  /* Transición suave para todas las propiedades */
     opacity: 1;                                         /* Totalmente visible al inicio */
-    /*border: 2px solid rgba(255, 255, 255, 0.2);*/
 }
 .logo-wrapper.shrink {
     width: 7rem;           /* Tamaño reducido al hacer scroll */
