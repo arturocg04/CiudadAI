@@ -258,14 +258,14 @@ const initUnifiedButtonAndLinkInteractions = () => {
           
           // Mostrar spinner
           const originalHTML = this.innerHTML;
-          this.innerHTML = '⏳ Procesando...';
+          this.innerHTML = 'Procesando...';
           
           // Restaurar después de 5 segundos (fallback)
           setTimeout(() => {
             this.style.pointerEvents = 'auto';
             this.style.opacity = '1';
             this.innerHTML = originalHTML;
-          }, 5000);
+          }, 3000);
         }
       });
     }
