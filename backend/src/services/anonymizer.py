@@ -92,7 +92,7 @@ def limpiar_descripcion(descripcion: str, ticket: TicketCreateInput) -> str:
             flags=re.IGNORECASE,
         )
 
-    texto_limpio = re.sub(r"\b\d{8}\s*[A-Za-z]?\b", "[NRO_OCULTO]", texto_limpio)
+    texto_limpio = re.sub(r"\b\d{8,9}\s*[A-Za-z]?\b", "[NRO_OCULTO]", texto_limpio)
     texto_limpio = re.sub(
         r"[\w\.-]+@[\w\.-]+\.\w+",
         lambda m: anonimizar_valor(m.group(0), "email"),

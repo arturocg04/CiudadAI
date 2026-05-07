@@ -569,8 +569,8 @@ a.button,
 }
 
 .citizen-grid .tickets-panel {
-  max-height: 72vh;
-  overflow: hidden;
+  max-height: 98vh;
+  overflow-y: hidden;
   padding: 2rem;
 }
 
