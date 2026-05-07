@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="login-container">
+<div class="login-container" data-animate>
   <div class="login-header">
     <div class="logo-container">
-      <img src="/static/images/logo.png" alt="CiudadAI Logo" class="logo">
-    </div>
+      <img src="/static/images/logo_V2.png" alt="CiudadAI Logo" class="logo">
+    </div class="card">
     <h1>Bienvenido a CiudadAI</h1>
     <p>Plataforma para reportar incidencias urbanas</p>
   </div>
 
   <div class="login-grid">
-    <div class="login-panel card">
+    <div class="login-panel card" data-animate>
       <h2>Reportar incidencia</h2>
       <p>¿Tienes una incidencia que reportar? Crea una nueva incidencia ahora.</p>
       <a href="/citizen/report" class="button primary">Reportar incidencia</a>
@@ -31,7 +31,7 @@
           Contraseña
           <input type="password" name="password" required />
         </label>
-        <button type="submit" class="button primary">Iniciar sesión</button>
+        <button type="submit" class="button primary" data-loading>Iniciar sesión</button>
       </form>
       <p class="login-hint">
         <strong>Credenciales de prueba (admin):</strong><br/>
@@ -40,7 +40,7 @@
       </p>
     </div>
 
-    <div class="register-panel card">
+    <div class="register-panel card" data-scroll-animate>
       <h2>¿No tienes cuenta?</h2>
       <p>Crea una cuenta para reportar incidencias y seguir su estado.</p>
       <a href="/register" class="button secondary">Crear cuenta</a>

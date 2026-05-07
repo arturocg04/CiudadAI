@@ -4,11 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title or "CiudadAI" }}</title>
-    <link rel="icon" type="image/png" href="/static/images/logo.png" />
+    <link rel="icon" type="image/png" href="/static/images/logo_V2.png" />
     <link rel="stylesheet" href="/static/css/main.css" />
+    <link rel="stylesheet" href="/static/css/page.css" />
+    <link rel="stylesheet" href="/static/css/custom-select.css" />
+    {% block extra_css %}{% endblock %}
   </head>
   <body>
     <main class="container">{% block content %}{% endblock %}</main>
-    <script src="/static/js/custom-select.js"></script>
+    <script src="/static/js/app.js" defer></script>
+    <script src="/static/js/custom-select.js" defer></script>
+    <script src="/static/js/page.js" defer></script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>

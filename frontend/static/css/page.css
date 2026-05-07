@@ -1,0 +1,692 @@
+/* Archivo de ejemplo para estilos específicos de página.
+   Es importable opcionalmente vía `{% block extra_css %}` en `base.html`.
+*/
+
+/* =====================================================
+   1. ANIMACIONES GLOBALES Y TRANSICIONES
+   ===================================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(31, 117, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(31, 117, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 117, 94, 0);
+  }
+}
+
+/* =====================================================
+   2. FIX MAIN - Asegurar renderizado correcto
+   ===================================================== */
+
+:root {
+  --color-primary: #1f755e;        /* Verde actual */
+  --color-bg: #f0f7f4;              /* Fondo claro */
+  --color-border: #e0e0e0;          /* Bordes */
+  --color-error: #d32f2f;           /* Errores */
+}
+
+main.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+ /* box-sizing: border-box;*/
+  padding: 20px;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Garantizar que el body y html no causen colapso */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg, #f0f7f4);
+  transition: background-color 0.3s ease;
+}
+
+/* =====================================================
+   3. TRANSICIONES SUAVES EN INPUTS Y ELEMENTOS
+   ===================================================== */
+
+input, textarea, select, button, a {
+  transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  transform: translateY(-1px);
+}
+
+/* =====================================================
+   4. TARJETAS - Responsivas y robustas
+   ===================================================== */
+
+/* Contenedor de tarjetas (home, login, etc.) */
+.dashboard {
+  flex-direction: column;  /* ← Cambio clave */
+  gap: 24px;
+}
+.card, 
+[class*="card"],
+[class*="Card"],
+form,
+.content-box,
+[class*="box"] {
+  animation: fadeInUp 0.6s ease-out forwards;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Stagger para múltiples tarjetas */
+.cards-grid,
+.grid, 
+.row,
+.flex-container,
+[class*="container"] > * {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.card:nth-child(1), [class*="card"]:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2), [class*="card"]:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3), [class*="card"]:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(n+4), [class*="card"]:nth-child(n+4) { animation-delay: 0.4s; }
+
+/* Asegurar que las tarjetas no se deformen */
+.card, 
+[class*="card"],
+.content-box,
+form {
+  display: flex;
+  flex-direction: column;
+  /* box-sizing: border-box; */
+  min-height: auto;
+  max-width: 100%;
+  min-width: 220px; /* Evita que se deforme la estructura de la tarjeta en ancho */
+}
+
+/* Asegura que el panel de los tickets siempre ocupe el espacio disponible */
+.form-panel card {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px; /* Evita que se deforme la estructura de la tarjeta en alto */
+    
+    width: 100%;       /* Ocupa todo el ancho de su columna en la grid */
+    align-self: start; /* Evita que se estire verticalmente de forma rara */
+}
+
+/* Control de las tarjetas individuales */
+.ticket-card {
+    width: 100%;       /* Obliga a la tarjeta a ocupar todo el ancho del contenedor */
+    max-width: 100%;   /* Evita que se desborde */
+    min-height: 210px; /* Tamaño mínimo aceptable */
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+}
+
+/* Estilo para el mensaje de "No hay registros" para que no se vea vacío */
+.tab-content p {
+    /*text-align: center;*/
+    color: var(--muted);
+   /* padding: 40px 20px;*/
+    font-style: italic;
+}
+
+/* =====================================================
+   5. HOVER Y MICRO-INTERACCIONES
+   ===================================================== */
+
+button, 
+.btn, 
+a[class*="btn"],
+input[type="submit"],
+input[type="button"] {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+button:hover, 
+.btn:hover, 
+a[class*="btn"]:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(31, 117, 94, 0.3);
+}
+
+button:active, 
+.btn:active, 
+a[class*="btn"]:active,
+input[type="submit"]:active,
+input[type="button"]:active {
+  transform: translateY(0);
+}
+
+/* Efecto hover en tarjetas interactivas */
+.card:hover, 
+[class*="card"]:hover,
+.content-box:hover {
+  transition: all 0.3s ease;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(31, 117, 94, 0.15);
+}
+
+/* =====================================================
+   6. FORMULARIOS - Mejoras visuales
+   ===================================================== */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  border: 2px solid var(--color-border, #e0e0e0);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-primary, #1f755e);
+  box-shadow: 0 0 0 3px rgba(31, 117, 94, 0.1);
+}
+
+input::placeholder, 
+textarea::placeholder {
+  transition: color 0.3s ease;
+}
+
+input:focus::placeholder, 
+textarea:focus::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* =====================================================
+   7. TRANSICIONES ENTRE PANTALLAS (page transitions)
+   ===================================================== */
+
+/* Para navegación entre páginas */
+main {
+  animation: fadeIn 0.5s ease-out;
+}
+
+a[href] {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--color-primary, #1f755e);
+}
+
+/* =====================================================
+   8. RESPONSIVE - Mobile first
+   ===================================================== */
+
+@media (max-width: 768px) {
+  main.container {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .card, 
+  [class*="card"],
+  .content-box {
+    margin-bottom: 12px;
+  }
+
+  button, 
+  .btn, 
+  input[type="submit"] {
+    padding: 12px 24px;
+    min-height: 48px; /* Accesibilidad: toque mínimo recomendado */
+  }
+
+  input, textarea, select {
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  main.container {
+    padding: 12px;
+  }
+
+  .card:nth-child(1), [class*="card"]:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2), [class*="card"]:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3), [class*="card"]:nth-child(3) { animation-delay: 0.15s; }
+}
+
+/* =====================================================
+   9. ESTADOS DE CARGA Y DESHABILITADO
+   ===================================================== */
+
+button:disabled, 
+.btn:disabled,
+input[type="submit"]:disabled,
+input[type="button"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+button:disabled:hover, 
+.btn:disabled:hover,
+input[type="submit"]:disabled:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+/* Spinner simple para estados de carga */
+.loading, [class*="loading"] {
+  animation: fadeIn 0.3s ease;
+  pointer-events: none;
+}
+
+/* =====================================================
+   10. SCROLL SMOOTH Y SCROLL BEHAVIOR
+   ===================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* =====================================================
+   11. MEJORAS DE ACCESIBILIDAD
+   ===================================================== */
+
+/* Focus visible para navegación con teclado */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary, #1f755e);
+  outline-offset: 2px;
+}
+
+/* Reduce motion para usuarios con preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =====================================================
+   12. SOPORTE PARA DARK MODE (opcional)
+   ===================================================== */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: var(--color-bg-dark, #1a1a1a);
+    color: var(--color-text-dark, #f0f0f0);
+  }
+
+  input, textarea, select {
+    background: var(--color-input-dark, #2a2a2a);
+    color: var(--color-text-dark, #f0f0f0);
+    border-color: var(--color-border-dark, #404040);
+  }
+}
+
+/* =====================================================
+   13. DASHBOARD LAYOUT FIX
+   Asegura estructura vertical correcta:
+   1. header-row ARRIBA (todo el ancho)
+   2. card ABAJO (todo el ancho)
+   ===================================================== */
+
+/* Contenedor principal del dashboard */
+main.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 24px;
+  padding: 24px;
+}
+
+/* Header row - SIEMPRE ARRIBA */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #1f755e 0%, #155840 100%);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(31, 117, 94, 0.15);
+  order: -1;  /* Asegurar que sea primero */
+  margin-bottom: 24px;
+  animation: fadeInDown 0.5s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-row h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+}
+
+.header-row p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.header-row form {
+  margin: 0;
+}
+
+.header-row button {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.header-row button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.header-row button:active {
+  transform: translateY(0);
+}
+/* rectificaion del logo en los headers de los dashboards */
+
+.citizen-header {
+position: sticky;      /* Mantiene la cabecera fija arriba */
+}
+
+.logo-wrapper {
+    border-radius: 50%;        /* Efecto de circulo */
+    object-fit: contain;     /* Ajusta la imagen sin cortarla */
+    display: block;
+    justify-content: center; /* Centra el logo horizontalmente */
+    align-items: center;     /* Centra el logo verticalmente */
+    height: 8rem;            /* Ajusta este valor al alto actual de tu banner */
+    width: 8rem;             /* Ajusta este valor al ancho actual de tu banner */
+    max-height: 100%;
+    padding: 2px 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);  /* Transición suave para todas las propiedades */
+    opacity: 1;                                         /* Totalmente visible al inicio */
+    /*border: 2px solid rgba(255, 255, 255, 0.2);*/
+}
+.logo-wrapper.shrink {
+    width: 7rem;           /* Tamaño reducido al hacer scroll */
+    height: 7rem;
+    padding:3px;
+    opacity: 0.9;           /* Efecto Fade: bajamos ligeramente la opacidad y luego vuelve */
+    /*box-shadow: 0 4px 8px rgba(0,0,0,0.1);*/
+}
+
+/* Contenedor de tarjetas - ABAJO */
+section.card,
+.card {
+  width: 100%;
+  padding: 32px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(31, 117, 94, 0.08);
+  border: 1px solid rgba(31, 117, 94, 0.1);
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+section.card:nth-of-type(1) {
+  animation-delay: 0.1s;
+}
+
+section.card:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+
+section.card:nth-of-type(3) {
+  animation-delay: 0.3s;
+}
+
+section.card h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 22px;
+  color: var(--color-primary, #1f755e);
+  font-weight: 700;
+}
+
+section.card p {
+  margin: 0;
+  color: var(--color-text-light, #666);
+}
+
+/* Lista dentro de tarjetas */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 14px;
+}
+
+.list li:last-child {
+  border-bottom: none;
+}
+
+.list li span:first-child {
+  font-weight: 600;
+  color: var(--color-primary, #1f755e);
+  min-width: 60px;
+}
+
+.list li span:nth-child(2) {
+  flex: 1;
+  margin: 0 16px;
+  color: var(--color-text, #1a1a1a);
+  font-weight: 500;
+}
+
+.list li .muted {
+  color: var(--color-text-light, #999);
+  font-size: 12px;
+}
+
+/* Texto muted global */
+.muted {
+  color: var(--color-text-light, #999);
+  font-size: 13px;
+}
+
+/* =====================================================
+   RESPONSIVE - Mobile
+   ===================================================== */
+
+@media (max-width: 768px) {
+  main.container {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .header-row {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+
+  .header-row h1 {
+    font-size: 24px;
+  }
+
+  .header-row form {
+    width: 100%;
+  }
+
+  .header-row button {
+    width: 100%;
+  }
+
+  section.card {
+    padding: 20px 16px;
+  }
+
+  section.card h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .list li span:nth-child(2) {
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  main.container {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .header-row {
+    padding: 16px 12px;
+  }
+
+  .header-row h1 {
+    font-size: 20px;
+  }
+
+  section.card {
+    padding: 16px 12px;
+  }
+
+  .list li span {
+    font-size: 13px;
+  }
+}
+
+/* =====================================================
+   HOVER EFFECTS
+   ===================================================== */
+
+section.card {
+  transition: all 0.3s ease;
+}
+
+section.card:hover {
+  box-shadow: 0 12px 28px rgba(31, 117, 94, 0.15);
+  border-color: rgba(31, 117, 94, 0.2);
+  transform: translateY(-2px);
+}
+
+.list li {
+  transition: all 0.2s ease;
+}
+
+.list li:hover {
+  background-color: rgba(31, 117, 94, 0.03);
+  padding-left: 8px;
+}
+
+
