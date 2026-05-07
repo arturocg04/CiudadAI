@@ -1,5 +1,5 @@
 # Backend API - Documentación de Endpoints
-
+## Hola mundo Prueba
 ## Descripción General
 
 API REST para la plataforma CiudadAI que gestiona reportes de incidencias ciudadanas y su asignación a trabajadores.
@@ -207,6 +207,21 @@ Esto crea:
 cd backend
 pip install -r requirements.txt
 ```
+
+### Recursos NLTK
+
+Algunos componentes del servicio (p. ej. el preprocesado de texto para el ML) requieren recursos de NLTK como `punkt`.
+
+- En entornos de desarrollo, estos recursos se descargan automáticamente durante el build de la imagen Docker (ver `Dockerfile`).
+- En local, si instalas dependencias manualmente, ejecuta:
+
+```bash
+python -m pip install -r requirements.txt
+python scripts/download_nltk.py
+```
+
+Esto asegura que los recursos NLTK estén disponibles antes de arrancar la aplicación, evitando llamadas a `nltk.download()` en tiempo de ejecución que pueden afectar rendimiento o reproducibilidad.
+
 
 Dependencias clave:
 - `fastapi`: Framework web
