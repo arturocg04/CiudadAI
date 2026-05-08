@@ -81,7 +81,7 @@ async def test_citizen_dashboard_endpoint_is_available(async_client):
 async def test_citizen_can_create_ticket_publicly(async_client):
     """Un ciudadano puede crear un ticket sin necesidad de estar autenticado."""
     response = await async_client.post(
-        "/api/v1/citizen/tickets",
+        "/api/v1/tickets",
         json=TICKET_PAYLOAD,
     )
     assert response.status_code == 201
@@ -94,7 +94,7 @@ async def test_citizen_can_create_ticket_publicly(async_client):
 async def test_admin_can_list_tickets(async_client, admin_token):
     """El admin puede ver los tickets creados públicamente."""
     # Crear un ticket como ciudadano anónimo
-    await async_client.post("/api/v1/citizen/tickets", json=TICKET_PAYLOAD)
+    await async_client.post("/api/v1/tickets", json=TICKET_PAYLOAD)
 
     # Listar como admin
     response = await async_client.get(
@@ -110,13 +110,14 @@ async def test_admin_can_review_ticket(async_client, admin_token):
     """El admin puede revisar un ticket existente usando los nuevos campos de predicción."""
     # Crear ticket público
     create_resp = await async_client.post(
-        "/api/v1/citizen/tickets", json=TICKET_PAYLOAD
+        "/api/v1/tickets", json=TICKET_PAYLOAD
     )
     ticket_id = create_resp.json()["id"]
 
     # Revisar como admin (Ajustado a los nuevos atributos prediccion_*)
     review_payload = {
         "status": "resolved",
+        "prediccion_urgencia": 5,
         "notes": "Confirmado in situ.",
     }
     review_resp = await async_client.patch(
@@ -126,7 +127,7 @@ async def test_admin_can_review_ticket(async_client, admin_token):
     )
     assert review_resp.status_code == 200
     data = review_resp.json()
-    # Sin ML disponible en tests, prediccion_urgencia es None pero el ticket queda revisado
+    # Sin ML disponible en tests, prediccion_urgencia puede ser None pero el ticket queda revisado
     assert data["reviewed_by"] == "api_user"
     assert data["status"] == "resolved"
 
@@ -135,7 +136,7 @@ async def test_admin_can_review_ticket(async_client, admin_token):
 async def test_admin_stats_returns_counts(async_client, admin_token):
     """El endpoint de estadísticas debe devolver campos numéricos."""
     # Crear al menos un ticket público
-    await async_client.post("/api/v1/citizen/tickets", json=TICKET_PAYLOAD)
+    await async_client.post("/api/v1/tickets", json=TICKET_PAYLOAD)
 
     response = await async_client.get(
         "/api/v1/admin/stats",
@@ -152,6 +153,7 @@ async def test_review_nonexistent_ticket_returns_404(async_client, admin_token):
     """Revisar un ticket inexistente debe devolver 404."""
     review_payload = {
         "status": "accepted",
+        "prediccion_urgencia": 3,
     }
     response = await async_client.patch(
         "/api/v1/admin/tickets/99999/review",

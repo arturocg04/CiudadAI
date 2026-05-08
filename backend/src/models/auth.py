@@ -4,8 +4,8 @@ from pydantic import BaseModel, EmailStr, Field
 class LoginInput(BaseModel):
     """Credenciales básicas para el login de ejemplo."""
 
-    username: str = Field(example="api_user")
-    password: str = Field(example="change_me")
+    username: str = Field(json_schema_extra={"example": "api_user"})
+    password: str = Field(json_schema_extra={"example": "change_me"})
 
 
 class TokenResponse(BaseModel):

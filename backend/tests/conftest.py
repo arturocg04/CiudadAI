@@ -5,6 +5,7 @@ para tests de integración sin necesitar PostgreSQL real.
 """
 
 import os
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -16,11 +17,13 @@ from src.app import app
 from src.config import settings
 from src.db.models import Base
 from src.db.session import get_db
+from src.models.tickets import TicketClassificationResult, TicketCategory, TicketUrgency
 from src.services.auth_service import (
     USERS_DB,
     _build_users_db_from_settings,
     create_access_token,
 )
+from src.services import ticket_service
 
 # ---------------------------------------------------------------------------
 # Mock auth setup
@@ -69,10 +72,27 @@ async def db_session():
 
 
 @pytest_asyncio.fixture
-async def async_client(db_session: AsyncSession):
-    """Cliente async con la BD en memoria inyectada."""
+async def async_client(db_session: AsyncSession, monkeypatch):
+    """Cliente async con la BD en memoria inyectada y servicio ML mockeado."""
 
     app.dependency_overrides[get_db] = lambda: db_session
+    
+    # Mockear el cliente de ML para devolver un resultado válido
+    async def mock_call_ml_predict(description: str, categoria: str):
+        """Mock del cliente de ML que devuelve predicciones fijas."""
+        return TicketClassificationResult(
+            urgency=TicketUrgency.medium,
+            category=TicketCategory.limpieza,
+            model_name="mock-model",
+            model_version="1.0.0",
+        )
+    
+    monkeypatch.setattr(
+        ticket_service,
+        "call_ml_predict",
+        mock_call_ml_predict,
+    )
+    
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -96,7 +116,30 @@ def admin_token() -> str:
 
 
 @pytest.fixture
-def client() -> TestClient:
-    """Cliente de pruebas síncrono para endpoints FastAPI (legacy)."""
+def client(db_session: AsyncSession, monkeypatch) -> TestClient:
+    """Cliente de pruebas síncrono para endpoints FastAPI (legacy).
+    
+    Sobrescribe la dependencia de BD con la sesión en memoria.
+    """
 
-    return TestClient(app)
+    app.dependency_overrides[get_db] = lambda: db_session
+    
+    # Mockear el cliente de ML para devolver un resultado válido
+    async def mock_call_ml_predict(description: str, categoria: str):
+        """Mock del cliente de ML que devuelve predicciones fijas."""
+        return TicketClassificationResult(
+            urgency=TicketUrgency.medium,
+            category=TicketCategory.limpieza,
+            model_name="mock-model",
+            model_version="1.0.0",
+        )
+    
+    monkeypatch.setattr(
+        ticket_service,
+        "call_ml_predict",
+        mock_call_ml_predict,
+    )
+    
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()

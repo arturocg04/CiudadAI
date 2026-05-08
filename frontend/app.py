@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from config import settings
+from frontend.config import settings
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-# from routes.auth import router as auth_router  # DEPRECATED: Using pages.py instead
-from routes.pages import router as pages_router
+# from frontend.routes.auth import router as auth_router  # DEPRECATED: Using pages.py instead
+from frontend.routes.pages import router as pages_router
 from starlette.middleware.sessions import SessionMiddleware
 
 BASE_DIR = Path(__file__).resolve().parent
