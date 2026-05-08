@@ -4,7 +4,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
-from services.api_client import api_client
+from frontend.services.api_client import api_client
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -14,7 +14,7 @@ templates = Jinja2Templates(
 
 @router.get("/login")
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "login.html", {"request": request, "error": None})
 
 
 @router.post("/login")
@@ -27,12 +27,14 @@ async def login_submit(
         token_response = await api_client.login(username=username, password=password)
     except HTTPStatusError:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {"request": request, "error": "Credenciales inválidas."},
             status_code=401,
         )
     except RequestError:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {"request": request, "error": "No se pudo conectar con la API."},
             status_code=503,
@@ -43,6 +45,7 @@ async def login_submit(
         user = await api_client.me(token_response.access_token)
     except (HTTPStatusError, RequestError):
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
                 "request": request,

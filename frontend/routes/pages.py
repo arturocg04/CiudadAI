@@ -5,7 +5,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
-from services.api_client import api_client
+from frontend.services.api_client import api_client
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -36,7 +36,7 @@ async def home(request: Request):
         else:
             return RedirectResponse(url="/citizen/dashboard", status_code=303)
 
-    return templates.TemplateResponse("home.html", {"request": request})
+    return templates.TemplateResponse(request, "home.html", {"request": request})
 
 
 def _translate_api_error(exc: Exception, fallback: str) -> str:
@@ -58,7 +58,7 @@ def _translate_api_error(exc: Exception, fallback: str) -> str:
 
 @router.get("/register")
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request, "register.html", {"request": request})
 
 
 @router.get("/auth/register")
@@ -76,7 +76,7 @@ async def admin_login_page(request: Request):
                 return RedirectResponse(url="/admin/dashboard", status_code=303)
         except HTTPStatusError:
             pass
-    return templates.TemplateResponse("admin_login.html", {"request": request})
+    return templates.TemplateResponse(request, "admin_login.html", {"request": request})
 
 
 @router.get("/auth/login")
@@ -100,6 +100,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
         return templates.TemplateResponse(
+            request,
             "home.html", {"request": request, "error": error_msg}
         )
     except Exception as exc:
@@ -107,6 +108,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
 
         logging.exception(f"Error no controlado en login: {exc}")
         return templates.TemplateResponse(
+            request,
             "home.html", {"request": request, "error": f"Error interno: {str(exc)}"}
         )
 
@@ -134,6 +136,7 @@ async def register(
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Error al crear cuenta")
         return templates.TemplateResponse(
+            request,
             "register.html", {"request": request, "error": error_msg}
         )
     except Exception as exc:
@@ -141,6 +144,7 @@ async def register(
 
         logging.exception(f"Error en registro: {exc}")
         return templates.TemplateResponse(
+            request,
             "register.html", {"request": request, "error": f"Error interno: {str(exc)}"}
         )
 
@@ -161,10 +165,12 @@ async def admin_login(
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
         return templates.TemplateResponse(
+            request,
             "admin_login.html", {"request": request, "error": error_msg}
         )
     except HTTPException as exc:
         return templates.TemplateResponse(
+            request,
             "admin_login.html", {"request": request, "error": str(exc.detail)}
         )
 
@@ -193,7 +199,7 @@ async def dashboard(request: Request):
         "current_user": current_user,
         "items": items.items,
     }
-    return templates.TemplateResponse("dashboard.html", context)
+    return templates.TemplateResponse(request, "dashboard.html", context)
 
 
 # ============ RUTAS ADMIN ============
@@ -254,7 +260,7 @@ async def admin_dashboard(request: Request, status: str | None = None):
         "admin_tickets": admin_tickets,
         "selected_status": status_filter,
     }
-    return templates.TemplateResponse("admin_dashboard.html", context)
+    return templates.TemplateResponse(request, "admin_dashboard.html", context)
 
 
 @router.post("/admin/tickets/{ticket_id}/delete")
@@ -332,6 +338,7 @@ async def admin_ticket_detail(request: Request, ticket_id: int):
         ) from err
 
     return templates.TemplateResponse(
+        request,
         "admin_ticket_edit.html",
         {
             "request": request,
@@ -409,6 +416,7 @@ async def admin_ticket_review_submit(
             return RedirectResponse(url="/admin/dashboard", status_code=303)
 
         return templates.TemplateResponse(
+            request,
             "admin_ticket_edit.html",
             {
                 "request": request,
@@ -468,6 +476,7 @@ async def citizen_report_submit(
         except Exception:
             pass
         return templates.TemplateResponse(
+            request,
             "citizen_dashboard.html",
             {
                 "request": request,
@@ -477,6 +486,7 @@ async def citizen_report_submit(
         )
     except RequestError:
         return templates.TemplateResponse(
+            request,
             "home.html",
             {
                 "request": request,
@@ -489,6 +499,7 @@ async def citizen_report_submit(
         )
 
     return templates.TemplateResponse(
+        request,
         "ticket_success.html",
         {"request": request, "ticket": ticket},
     )
@@ -523,7 +534,7 @@ async def citizen_dashboard(request: Request):
         "current_user": current_user,
         "citizen_tickets": citizen_tickets,
     }
-    return templates.TemplateResponse("citizen_dashboard.html", context)
+    return templates.TemplateResponse(request, "citizen_dashboard.html", context)
 
 
 @router.post("/citizen/tickets/{ticket_id}/delete")

@@ -9,7 +9,7 @@ import unicodedata
 from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 def _normalize_category(value: str) -> str:
@@ -84,7 +84,8 @@ class TicketCreateInput(BaseModel):
     ubicacion_incidencia: str = Field(min_length=1, max_length=255)
     fecha: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @validator("nombre", "apellidos")
+    @field_validator("nombre", "apellidos")
+    @classmethod
     def validate_name(cls, value: str) -> str:
         normalized = value.strip()
         if not re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+", normalized):
@@ -93,7 +94,8 @@ class TicketCreateInput(BaseModel):
             )
         return normalized
 
-    @validator("nif")
+    @field_validator("nif")
+    @classmethod
     def validate_nif_nie(cls, value: str) -> str:
         normalized = value.strip().upper()
         if not re.fullmatch(r"(?:\d{8}[A-Z]|[XYZ]\d{7}[A-Z])", normalized):

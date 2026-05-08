@@ -11,8 +11,10 @@ sqlalchemy[asyncio]==2.0.40
 asyncpg==0.30.0
 
 # Autenticación JWT + hash de contraseñas
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.4.0
 bcrypt==4.3.0
 
 # Cliente HTTP para el servicio ML
 httpx==0.28.1
+# NLTK pinned for reproducibility
+nltk==3.8.1
