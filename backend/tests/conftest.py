@@ -5,7 +5,6 @@ para tests de integración sin necesitar PostgreSQL real.
 """
 
 import os
-from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -17,13 +16,13 @@ from src.app import app
 from src.config import settings
 from src.db.models import Base
 from src.db.session import get_db
-from src.models.tickets import TicketClassificationResult, TicketCategory, TicketUrgency
+from src.models.tickets import TicketCategory, TicketClassificationResult, TicketUrgency
+from src.services import ticket_service
 from src.services.auth_service import (
     USERS_DB,
     _build_users_db_from_settings,
     create_access_token,
 )
-from src.services import ticket_service
 
 # ---------------------------------------------------------------------------
 # Mock auth setup

@@ -6,7 +6,6 @@ incluyendo anonimización, predicción ML, y revisión por admin.
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Flujos públicos (sin autenticación)
 # ---------------------------------------------------------------------------

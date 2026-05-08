@@ -4,6 +4,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
+
 from frontend.services.api_client import api_client
 
 router = APIRouter()
