@@ -53,18 +53,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
     command: uvicorn app:app --host 0.0.0.0 --port 8500 --reload
     env_file:
       - ./frontend/.env
+    environment:
+      - PYTHONPATH=/app/..
     depends_on:
       - api
     ports:
       - "8500:8500"
     volumes:
-      - ./frontend:/app
+      - .:/app 
+    working_dir: /app/frontend
 
 volumes:
   postgres_data:
