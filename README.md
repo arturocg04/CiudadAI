@@ -1,157 +1,185 @@
-# Plantilla base profesional de FastAPI
+# Sistema CiudadIA: Gestión Inteligente de Incidencias
 
-Esta carpeta es un punto de partida limpio para equipos de bootcamp que ya iniciaron un proyecto y quieren ordenar su backend con una estructura mantenible.
+Sistema completo para la gestión de incidencias ciudadanas con clasificación automática, predicción de urgencia y flujos de trabajo aprobados. Combina una API backend robusta, interfaz web intuitiva y servicios de aprendizaje automático para optimizar la atención de solicitudes municipales.
 
-La base está inspirada en patrones reales de APIs productivas: app central, configuración por entorno, routers por dominio, dependencias de seguridad, capa de servicios y pruebas desde el inicio.
+## Arquitectura del Sistema
+
+CiudadIA es un sistema completo compuesto por:
+
+- **Backend API** (`/backend`): Servicio RESTful desarrollado con FastAPI que maneja la lógica de negocio, autenticación y persistencia
+- **Frontend Web** (`/frontend`): Interfaz de usuario desarrollada con Jinja2/HTML/CSS para ciudadanos y administradores
+- **Servicio de ML** (`/ml_service`): Microservicio que proporciona predicciones de urgencia y clasificación de tickets usando modelos de aprendizaje automático
+- **Entrenamiento de Modelos** (`/ML`): Notebooks y scripts para entrenar y mejorar los modelos de ML
 
 ## Qué incluye
 
-- arranque de FastAPI con lifespan y handlers globales de error
-- configuración centralizada con Pydantic Settings
-- autenticación básica estilo OAuth2 Bearer (mock, reemplazable)
-- separación clara entre router, servicio y modelos
-- documentación OpenAPI automática
-- tests base con pytest y TestClient
+- Sistema completo backend-frontend-ML integrado
+- API RESTful con FastAPI y documentación OpenAPI automática
+- Interfaz web para ciudadanos (reportar incidencias) y administradores (gestionar tickets)
+- Servicio de ML para predicción de urgencia y clasificación automática
+- Autenticación JWT segura con roles de usuario
+- Base de datos PostgreSQL con modelos ORM
+- Tests unitarios y de integración
+- Containerización con Docker y Docker Compose
+- Configuración por entorno mediante variables
+- Manejo global de errores y validación de datos
+- Arquitectura modular y escalable
 
 ## Estructura del repositorio
 
 ```text
-fastapi-base-template/
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yaml
-├── pyproject.toml
-├── requirements.txt
-├── dev-requirements.txt
-├── README.md
-├── src/
-│   ├── __init__.py
-│   ├── app.py
-│   ├── config.py
-│   ├── constants.py
-│   ├── deps.py
-│   ├── middleware.py
-│   ├── spec.py
-│   ├── common/
-│   │   ├── __init__.py
-│   │   └── responses.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── auth.py
-│   │   ├── errors.py
-│   │   └── health.py
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── auth_router.py
-│   │   ├── health_router.py
-│   │   ├── items_router.py
-│   │   └── router_template.py
-│   └── services/
-│       ├── __init__.py
-│       └── auth_service.py
-└── tests/
-    ├── __init__.py
-    ├── conftest.py
-    ├── test_auth.py
-    └── test_health.py
+CiudadIA/
+├── backend/                 # API RESTful con FastAPI
+│   ├── src/                 # Código fuente
+│   │   ├── app.py           # Punto de entrada
+│   │   ├── routers/         # Endpoints agrupados por dominio
+│   │   ├── services/        # Lógica de negocio
+│   │   ├── models/          # Modelos Pydantic y ORM
+│   │   ├── db/              # Configuración de base de datos
+│   │   └── clients/         # Clientes para servicios externos
+│   ├── tests/               # Tests unitarios e integración
+│   ├── Dockerfile           # Configuración de contenedor
+│   └── requirements.txt     # Dependencias de Python
+├── frontend/                # Interfaz web
+│   ├── app.py               # Aplicación web (Jinja2)
+│   ├── templates/           # Páginas HTML
+│   ├── static/              # Assets estáticos
+│   ├── config.py            # Configuración
+│   ├── Dockerfile           # Configuración de contenedor
+│   └── requirements.txt     # Dependencias
+├── ml_service/              # Servicio de aprendizaje automático
+│   ├── app.py               # API de predicciones
+│   ├── model/               # Modelos entrenados
+│   ├── Dockerfile           # Configuración de contenedor
+│   └── requirements.txt     # Dependencias
+├── ML/                      # Entrenamiento y experimentación
+│   ├── ModelTraining.ipynb  # Notebook principal de entrenamiento
+│   ├── incidencias.csv      # Dataset de entrenamiento
+│   ├── requirements.txt     # Dependencias de ML
+│   └── IMPLEMENTATION_SUMMARY.md  # Resumen de implementación
+├── docker-compose.yaml      # Orquestación de todos los servicios
+├── .env.example             # Variables de entorno de ejemplo
+└── README.md                # Este archivo
 ```
 
 ## Librerías mínimas
 
-Dependencias de ejecución:
-
+### Backend:
 - fastapi
 - uvicorn
 - pydantic-settings
+- psycopg2-binary
+- sqlalchemy
+- python-jose[cryptography]
+- passlib[bcrypt]
 
-Dependencias de desarrollo:
+### Frontend:
+- fastapi (para servir templates)
+- jinja2
 
+### ML Service:
+- tensorflow
+- scikit-learn
+- pandas
+- numpy
+- fastapi
+- uvicorn
+
+### Dependencias de desarrollo (para todos los servicios):
 - pytest
 - httpx
 - ruff
 
 ## Qué es pyproject.toml
 
-pyproject.toml es el archivo estándar de configuración del proyecto Python. En esta plantilla centraliza:
+Nota: Cada servicio tiene su propio requirements.txt para gestionar dependencias específicas. Los servicios usan configuraciones individuales apropiadas para su funcionalidad.
 
-- metadatos del proyecto (nombre, versión, python requerido)
-- dependencias principales
-- configuración de herramientas (pytest y ruff)
+## Ejecución completa del sistema
 
-Tener esto en un único archivo ayuda a mantener consistencia entre equipos y entornos CI/CD.
+1. Clonar el repositorio y entrar al directorio
+2. Copiar `.env.example` a `.env` en cada servicio (backend, frontend, ml_service) y ajustar valores
+3. Construir y levantar todos los servicios con Docker Compose:
+   ```bash
+   docker compose up --build
+   ```
+4. Acceder a los diferentes servicios:
+   - API Backend: http://localhost:8000/docs
+   - Frontend Web: http://localhost:8080
+   - Servicio ML: http://localhost:8001/docs
+   - Base de datos: disponible en puerto 5432 (PostgreSQL)
 
-## Ejecución local
+### Ejecución individual (para desarrollo)
 
-1. Crear entorno virtual e instalar dependencias:
-
+#### Backend:
 ```bash
+cd backend
 python -m pip install -r requirements.txt
-python -m pip install -r dev-requirements.txt
-```
-
-2. Copiar .env.example a .env y ajustar valores mínimos.
-3. Ejecutar la API:
-
-```bash
 uvicorn src.app:app --reload
 ```
 
-4. Abrir documentación:
-
-- Swagger UI: http://127.0.0.1:8000/docs
-- OpenAPI JSON: http://127.0.0.1:8000/openapi.json
-
-## Ejecución con Docker
-
+#### Frontend:
 ```bash
-docker compose up --build
+cd frontend
+python -m pip install -r requirements.txt
+python app.py
 ```
 
-La API quedará publicada en http://127.0.0.1:8000.
+#### ML Service:
+```bash
+cd ml_service
+python -m pip install -r requirements.txt
+uvicorn app:app --reload
+```
 
-## Autenticación incluida (base)
+## Servicio de Machine Learning
 
-La plantilla implementa una versión mínima del patrón OAuth2 Bearer:
+El proyecto incluye un servicio dedicado a ML que proporciona:
 
-- POST /api/v1/auth/login valida credenciales mock y entrega token bearer.
-- OAuth2PasswordBearer extrae el token del header Authorization.
-- get_current_user valida el token y construye el usuario actual.
-- endpoints como /api/v1/items quedan protegidos por dependencia.
+- Predicción de urgencia para nuevos tickets (baja, media, alta)
+- Clasificación automática de categorías (alumbrado, baches, limpieza, etc.)
+- Reentrenamiento periódico con nuevos datos
+- API RESTful para integración con el backend
 
-Esto está diseñado para reemplazarse fácilmente por autenticación real:
+Detalles técnicos:
+- Ubicado en `/ml_service`
+- Usa TensorFlow/Keras para redes neuronales
+- Entrenado con datos históricos de incidencias
+- Endpoints: `/predict` (predicción), `/health` (estado)
+- Documentación en `/ML/IMPLEMENTATION_SUMMARY.md`
 
-1. JWT firmados por el propio backend.
-2. Keycloak, Auth0 o proveedor OIDC externo.
-3. IdP corporativo con introspección o JWKS.
+## Cómo adaptar el sistema a necesidades específicas
 
-## Cómo adaptar esta base a un proyecto real
+Este sistema está listo para producción pero puede extenderse:
 
-- Mantener routers centrados en HTTP (validación y respuestas), no en lógica de negocio.
-- Mover reglas de negocio a services para facilitar testing y reutilización.
-- Definir contratos de entrada y salida en models.
-- Reutilizar dependencias en deps para seguridad, contexto de usuario y recursos comunes.
-- Si aparece persistencia, crear src/db con sesión, repositorios y modelos ORM.
-- Si hay integraciones externas, crear src/clients o src/integrations por proveedor.
-- Si hay requisitos de seguridad adicionales, extender middlewares y handlers en lugar de dispersar lógica en cada endpoint.
+- **Backend**: Añadir nuevos routers en `backend/src/routers/` y servicios en `backend/src/services/`
+- **Frontend**: Crear nuevas plantillas en `frontend/templates/` y rutas en `frontend/app.py`
+- **ML**: Mejorar modelos en `ML/ModelTraining.ipynb` y actualizar `/ml_service/app.py`
+- **Integraciones**: Añadir clientes en `backend/src/clients/` para servicios externos
+- **Monitoring**: Implementar logging avanzado y métricas
+- **Multi-tenancy**: Adaptar para múltiples municipios o departamentos
 
-## Decisiones de diseño de esta plantilla
+## Tecnologías Utilizadas
 
-- No incluye base de datos por defecto para reducir complejidad inicial.
-- Incluye seguridad mínima para exponer el patrón de autenticación desde el inicio.
-- Evita dependencias corporativas o acoplamientos propietarios.
-- Cada archivo incluye contexto breve en español para acelerar adopción por equipos.
+- **Backend**: FastAPI, PostgreSQL, SQLAlchemy, Pydantic, JWT
+- **Frontend**: Jinja2, HTML5, CSS3, Bootstrap
+- **ML**: TensorFlow, Keras, Pandas, Scikit-learn
+- **Infraestructura**: Docker, Docker Compose, NGINX (implícito en composición)
+- **Testing**: Pytest, HTTPX
+- **Calidad**: Ruff, MyPy
+- **ORM**: SQLAlchemy con modelos declarativos
+- **Autenticación**: JWT con refresh tokens y roles
 
-## Hallazgos estructurales tomados de proyectos reales
+## Decisiones de diseño
 
-Del análisis profundo de implementaciones similares se abstrajeron estas decisiones:
+- Arquitectura basada en microservicios ligados por Docker Compose
+- Separación clara de responsabilidades: API, presentación y ML
+- Seguridad por diseño con autenticación JWT y autorización por roles
+- Escalabilidad horizontal mediante contenedores independientes
+- Manejo de errores centralizado y respuestas consistentes
+- Documentación automática de APIs mediante OpenAPI/Swagger
+- Configuración por entorno para desarrollo, staging y producción
+- Tests que verifican tanto funcionalidad como seguridad
 
-- centralizar configuración y no leer variables de entorno desde routers
-- usar dependencia de usuario actual en endpoints protegidos
-- separar validaciones y regex de negocio fuera de handlers
-- definir respuestas de error comunes para mantener contratos homogéneos
-- trabajar con tests que verifiquen seguridad, no solo casos felices
-- reservar un archivo de especificación (src/spec.py) para metadatos OpenAPI si el proyecto crece
 
 ## Comandos de trabajo útiles
 
@@ -166,6 +194,26 @@ ruff check .
 ruff format .
 ```
 
-## Limitaciones intencionales
+### Sistema completo:
+```bash
+# Ver estado de todos los servicios
+docker compose ps
 
-Esta plantilla no intenta imponer una arquitectura cerrada. Es una base limpia para integrar equipos, estandarizar estructura y evolucionar el proyecto sin deuda temprana.
+# Ver logs de todos los servicios
+docker compose logs -f
+
+# Detener todos los servicios
+docker compose down
+
+# Reconstruir y reiniciar
+docker compose up --build -d
+```
+
+## Limitaciones 
+
+- El servicio de ML usa un modelo simple para demostración
+- La autenticación está diseñada para ser reemplazada por proveedores externos
+- No incluye monitoreo avanzado (Prometheus/Grafana)
+- Los tests de carga no están incluidos pero pueden añadirse con herramientas como Locust
+
+Este sistema representa una base sólida para aplicaciones gubernamentales inteligentes que pueden evolucionar según las necesidades específicas de cada entidad municipal o departamento público.
