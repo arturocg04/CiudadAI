@@ -102,12 +102,9 @@ Nota: Cada servicio tiene su propio requirements.txt para gestionar dependencias
    ```bash
    docker compose up --build
    ```
-4. Acceder a los diferentes servicios:
-   - API Backend: http://localhost:8000/docs
-   - Frontend Web: http://localhost:8080
-   - Servicio ML: http://localhost:8001/docs
-   - Base de datos: disponible en puerto 5432 (PostgreSQL)
-
+4. Acceder al servicio web:
+   - Frontend Web: http://localhost:8500
+   - 
 ### Ejecución individual (para desarrollo)
 
 #### Backend:
