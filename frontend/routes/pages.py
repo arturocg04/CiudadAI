@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
 
-from frontend.services.api_client import api_client
+from services.api_client import api_client
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -101,8 +101,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
         return templates.TemplateResponse(
-            request,
-            "home.html", {"request": request, "error": error_msg}
+            request, "home.html", {"request": request, "error": error_msg}
         )
     except Exception as exc:
         import logging
@@ -110,7 +109,8 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         logging.exception(f"Error no controlado en login: {exc}")
         return templates.TemplateResponse(
             request,
-            "home.html", {"request": request, "error": f"Error interno: {str(exc)}"}
+            "home.html",
+            {"request": request, "error": f"Error interno: {str(exc)}"},
         )
 
 
@@ -137,8 +137,7 @@ async def register(
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Error al crear cuenta")
         return templates.TemplateResponse(
-            request,
-            "register.html", {"request": request, "error": error_msg}
+            request, "register.html", {"request": request, "error": error_msg}
         )
     except Exception as exc:
         import logging
@@ -146,7 +145,8 @@ async def register(
         logging.exception(f"Error en registro: {exc}")
         return templates.TemplateResponse(
             request,
-            "register.html", {"request": request, "error": f"Error interno: {str(exc)}"}
+            "register.html",
+            {"request": request, "error": f"Error interno: {str(exc)}"},
         )
 
 
@@ -166,13 +166,11 @@ async def admin_login(
     except (HTTPStatusError, RequestError) as exc:
         error_msg = _translate_api_error(exc, "Credenciales inválidas")
         return templates.TemplateResponse(
-            request,
-            "admin_login.html", {"request": request, "error": error_msg}
+            request, "admin_login.html", {"request": request, "error": error_msg}
         )
     except HTTPException as exc:
         return templates.TemplateResponse(
-            request,
-            "admin_login.html", {"request": request, "error": str(exc.detail)}
+            request, "admin_login.html", {"request": request, "error": str(exc.detail)}
         )
 
 

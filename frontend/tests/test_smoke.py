@@ -7,7 +7,7 @@ if str(root_dir) not in sys.path:
 
 from fastapi.testclient import TestClient
 
-from frontend.app import app
+from app import app
 
 
 def test_home_shows_public_landing():

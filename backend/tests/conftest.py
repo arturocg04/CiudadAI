@@ -75,7 +75,7 @@ async def async_client(db_session: AsyncSession, monkeypatch):
     """Cliente async con la BD en memoria inyectada y servicio ML mockeado."""
 
     app.dependency_overrides[get_db] = lambda: db_session
-    
+
     # Mockear el cliente de ML para devolver un resultado válido
     async def mock_call_ml_predict(description: str, categoria: str):
         """Mock del cliente de ML que devuelve predicciones fijas."""
@@ -85,13 +85,13 @@ async def async_client(db_session: AsyncSession, monkeypatch):
             model_name="mock-model",
             model_version="1.0.0",
         )
-    
+
     monkeypatch.setattr(
         ticket_service,
         "call_ml_predict",
         mock_call_ml_predict,
     )
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -117,12 +117,12 @@ def admin_token() -> str:
 @pytest.fixture
 def client(db_session: AsyncSession, monkeypatch) -> TestClient:
     """Cliente de pruebas síncrono para endpoints FastAPI (legacy).
-    
+
     Sobrescribe la dependencia de BD con la sesión en memoria.
     """
 
     app.dependency_overrides[get_db] = lambda: db_session
-    
+
     # Mockear el cliente de ML para devolver un resultado válido
     async def mock_call_ml_predict(description: str, categoria: str):
         """Mock del cliente de ML que devuelve predicciones fijas."""
@@ -132,13 +132,13 @@ def client(db_session: AsyncSession, monkeypatch) -> TestClient:
             model_name="mock-model",
             model_version="1.0.0",
         )
-    
+
     monkeypatch.setattr(
         ticket_service,
         "call_ml_predict",
         mock_call_ml_predict,
     )
-    
+
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()

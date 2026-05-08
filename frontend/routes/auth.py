@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from httpx import HTTPStatusError, RequestError
 
-from frontend.services.api_client import api_client
+from services.api_client import api_client
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -15,7 +15,9 @@ templates = Jinja2Templates(
 
 @router.get("/login")
 async def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(
+        request, "login.html", {"request": request, "error": None}
+    )
 
 
 @router.post("/login")

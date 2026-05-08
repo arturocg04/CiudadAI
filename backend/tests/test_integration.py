@@ -12,7 +12,9 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_citizen_can_create_and_admin_can_review_ticket(async_client, admin_token):
+async def test_citizen_can_create_and_admin_can_review_ticket(
+    async_client, admin_token
+):
     """Flujo completo: ciudadano reporta, admin revisa y clasifica."""
 
     ticket_payload = {
@@ -75,14 +77,23 @@ async def test_citizen_can_create_and_admin_can_review_ticket(async_client, admi
     assert reviewed_ticket["status"] == "accepted"
     assert reviewed_ticket["prediccion_urgencia"] == 4
     assert reviewed_ticket["reviewed_by"] == "api_user"
-    assert reviewed_ticket["admin_notes"] == "Confirmado in situ. Necesita reparación urgente."
+    assert (
+        reviewed_ticket["admin_notes"]
+        == "Confirmado in situ. Necesita reparación urgente."
+    )
 
 
 @pytest.mark.asyncio
 async def test_multiple_tickets_with_different_categories(async_client, admin_token):
     """Crear múltiples tickets con diferentes categorías."""
 
-    categories = ["movilidad", "limpieza", "alumbrado_publico", "parques_y_jardines", "mobiliario_urbano"]
+    categories = [
+        "movilidad",
+        "limpieza",
+        "alumbrado_publico",
+        "parques_y_jardines",
+        "mobiliario_urbano",
+    ]
 
     created_ids = []
 

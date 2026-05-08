@@ -1,7 +1,7 @@
 import httpx
 
-from frontend.config import settings
-from frontend.schemas.api import CurrentUser, ItemsResponse, TokenResponse
+from config import settings
+from schemas.api import CurrentUser, ItemsResponse, TokenResponse
 
 
 class BackendApiClient:

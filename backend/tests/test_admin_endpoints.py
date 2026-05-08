@@ -109,9 +109,7 @@ async def test_admin_can_list_tickets(async_client, admin_token):
 async def test_admin_can_review_ticket(async_client, admin_token):
     """El admin puede revisar un ticket existente usando los nuevos campos de predicción."""
     # Crear ticket público
-    create_resp = await async_client.post(
-        "/api/v1/tickets", json=TICKET_PAYLOAD
-    )
+    create_resp = await async_client.post("/api/v1/tickets", json=TICKET_PAYLOAD)
     ticket_id = create_resp.json()["id"]
 
     # Revisar como admin (Ajustado a los nuevos atributos prediccion_*)
