@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
-    """Registra un nuevo usuario verificando unicidad de email y teléfono."""
+    """Registra un nuevo usuario verificando unicidad de email, teléfono y NIF."""
     # Verificar si email ya existe
     existing_email = await db.execute(
         select(UserORM).filter(UserORM.email == user_data.email)
@@ -33,6 +34,13 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
     )
     if existing_phone.scalar():
         raise ValueError("El teléfono ya está registrado.")
+
+    # Verificar si NIF ya existe
+    existing_nif = await db.execute(
+        select(UserORM).filter(UserORM.nif == user_data.nif)
+    )
+    if existing_nif.scalar():
+        raise ValueError("El NIF/NIE ya está registrado.")
 
     # Hash de la contraseña
     hashed_password = bcrypt.hashpw(
@@ -51,7 +59,18 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> UserORM:
         role="citizen",
     )
     db.add(new_user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        error_msg = str(exc.orig) if exc.orig else str(exc)
+        if "nif" in error_msg.lower():
+            raise ValueError("El NIF/NIE ya está registrado.") from exc
+        if "email" in error_msg.lower():
+            raise ValueError("El email ya está registrado.") from exc
+        if "telefono" in error_msg.lower():
+            raise ValueError("El teléfono ya está registrado.") from exc
+        raise ValueError("Los datos proporcionados ya están registrados.") from exc
     await db.refresh(new_user)
     return new_user
 
